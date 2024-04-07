@@ -1,0 +1,27 @@
+{
+  "name": "com.baracuda.ui",
+  "version": "1.0.0",
+  "displayName": "UI",
+  "description": "UI abstraction system for dynamic element loading, asynchronous transitions, and a stack system for seamless input and layer control.",
+  "unity": "2021.3",
+  "documentationUrl": "https://github.comJohnBaracuda/com.baracuda.ui",
+  "changelogUrl": "https://github.com/JohnBaracuda/com.baracuda.ui/blob/main/CHANGELOG.md",
+  "licensesUrl": "https://github.com/JohnBaracuda/com.baracuda.ui/blob/main/LICENSE.md",
+  "dependencies": {
+    "com.baracuda.utilities": "1.0.0",
+    "com.baracuda.debug": "1.0.0",
+    "com.baracuda.mediator": "1.0.0"
+  },
+  "keywords": [
+    "user interface",
+    "ui",
+    "ui system",
+    "canvas"
+  ],
+  "author": {
+    "name": "John Baracuda",
+    "email": "johnbaracudagames@gmail.com",
+    "url": "https://github.com/JohnBaracuda"
+  },
+  "type": "tool"
+}
