@@ -1,29 +1,26 @@
-﻿using PrimeTween;
+﻿using DG.Tweening;
 using UnityEngine;
 
 namespace Baracuda.UI
 {
-    public class HUD : UIComponent
+    public class HUD : UIComponentIMGUI
     {
         [SerializeField] private float fadeInDuration;
         [SerializeField] private float fadeOutDuration;
 
         protected override Sequence ShowAsync(bool isFocusRegain)
         {
-            CanvasGroup.alpha = 0;
-            Tween.StopAll(this);
-            var tween = Tween.Custom(this, CanvasGroup.alpha, 1, fadeInDuration,
-                (controller, value) => controller.CanvasGroup.alpha = value);
-            return Sequence.Create(tween);
+            this.DOKill();
+            var sequence = DOTween.Sequence(this);
+            sequence.Append(CanvasGroup.DOFade(1, fadeInDuration));
+            return sequence;
         }
 
         protected override Sequence HideAsync(bool isFocusLoss)
         {
-            Tween.StopAll(this);
-            var sequence = Sequence.Create();
-            var tween = Tween.Custom(this, CanvasGroup.alpha, 0, fadeOutDuration,
-                (controller, value) => controller.CanvasGroup.alpha = value);
-            sequence.Chain(tween);
+            this.DOKill();
+            var sequence = DOTween.Sequence(this);
+            sequence.Append(CanvasGroup.DOFade(0, fadeOutDuration));
             return sequence;
         }
 

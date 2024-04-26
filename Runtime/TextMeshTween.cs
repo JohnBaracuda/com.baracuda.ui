@@ -1,29 +1,13 @@
-using PrimeTween;
+using DG.Tweening;
 using TMPro;
 
 namespace Baracuda.UI
 {
-    public readonly ref struct TextMeshTween
+    public static class DOTweenExtensions
     {
-        #region Text Font Size
-
-        public static Tween FontSize(TMP_Text textField, float fontSize, float duration)
+        public static Tweener DOTextMeshProSpacing(this TMP_Text target, float endValue, float duration)
         {
-            return Tween.Custom(textField, textField.fontSize, fontSize, duration,
-                (text, value) => { text.fontSize = value; });
+            return DOTween.To(() => target.characterSpacing, x => target.characterSpacing = x, endValue, duration);
         }
-
-        #endregion
-
-
-        #region Text Character Spacing
-
-        public static Tween CharacterSpacing(TMP_Text textField, float spacing, float duration)
-        {
-            return Tween.Custom(textField, textField.characterSpacing, spacing, duration,
-                (text, value) => { text.characterSpacing = value; });
-        }
-
-        #endregion
     }
 }

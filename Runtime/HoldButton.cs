@@ -69,6 +69,10 @@ namespace Baracuda.UI
             {
                 return;
             }
+            if (InputManager.IsGamepadScheme is false)
+            {
+                return;
+            }
             if (_isHolding)
             {
                 StopHold();
@@ -87,6 +91,12 @@ namespace Baracuda.UI
                 return;
             }
             StartHold();
+        }
+
+        public override void OnPointerUp(PointerEventData eventData)
+        {
+            base.OnPointerUp(eventData);
+            StopHold();
         }
 
         public override void OnPointerExit(PointerEventData eventData)
@@ -173,6 +183,7 @@ namespace Baracuda.UI
         public override void OnDeselect(BaseEventData eventData)
         {
             base.OnDeselect(eventData);
+            StopHold();
             submitAction.action.started -= OnSubmitDown;
             submitAction.action.canceled -= OnSubmitUp;
         }

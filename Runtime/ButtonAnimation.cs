@@ -1,6 +1,7 @@
 ﻿using Baracuda.Utilities.Types;
-using PrimeTween;
+using DG.Tweening;
 using Sirenix.OdinInspector;
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -48,8 +49,12 @@ namespace Baracuda.UI
         [Header("Noise")]
         [SerializeField] private UISpritesAnimation noiseAnimation;
 
-        private Sequence _sequence;
-        private bool _isSelected;
+        private bool _isForceSelected;
+
+        public bool IsSelected { get; private set; }
+        public bool IsHovered { get; private set; }
+        public event Action Selected;
+        public event Action Deselected;
 
         #endregion
 
@@ -58,7 +63,7 @@ namespace Baracuda.UI
 
         private void OnDestroy()
         {
-            _sequence.Stop();
+            this.DOKill();
         }
 
         private void OnValidate()
@@ -87,25 +92,62 @@ namespace Baracuda.UI
 
         #region Logic
 
+        public void ForceSelect()
+        {
+            _isForceSelected = true;
+            FadeToSelected();
+        }
+
+        public void ForceDeselect()
+        {
+            _isForceSelected = false;
+            if (IsSelected)
+            {
+                FadeToSelected();
+                return;
+            }
+            if (IsHovered)
+            {
+                FadeToHover();
+                return;
+            }
+            FadeToNormal();
+        }
+
         public void OnSelect(BaseEventData eventData)
         {
+            Selected?.Invoke();
+            IsSelected = true;
             if (targetButton.interactable is false)
             {
                 return;
             }
-            _isSelected = true;
+            if (_isForceSelected)
+            {
+                return;
+            }
             FadeToSelected();
         }
 
         public void OnDeselect(BaseEventData eventData)
         {
-            _isSelected = false;
+            Deselected?.Invoke();
+            IsSelected = false;
+            if (_isForceSelected)
+            {
+                return;
+            }
             FadeToNormal();
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
+            IsHovered = true;
             if (targetButton.interactable is false)
+            {
+                return;
+            }
+            if (_isForceSelected)
             {
                 return;
             }
@@ -114,7 +156,12 @@ namespace Baracuda.UI
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            if (_isSelected)
+            IsHovered = false;
+            if (_isForceSelected)
+            {
+                return;
+            }
+            if (IsSelected)
             {
                 FadeToSelected();
             }
@@ -169,13 +216,18 @@ namespace Baracuda.UI
         private void FadeTo(Color borderColor, Color backgroundColor, Color fontColor, float fontSize,
             float fontSpacing)
         {
-            _sequence.Stop();
-            _sequence = Sequence.Create();
-            _sequence.Chain(Tween.Color(borderImage, borderColor, fadeDuration));
-            _sequence.Group(Tween.Color(backgroundImage, backgroundColor, fadeDuration));
-            _sequence.Group(Tween.Color(textField, fontColor, fadeDuration));
-            _sequence.Group(TextMeshTween.FontSize(textField, fontSize, fadeDuration));
-            _sequence.Group(TextMeshTween.CharacterSpacing(textField, fontSpacing, fadeDuration));
+            this.DOKill();
+
+            var sequence = DOTween.Sequence(this);
+
+            // Animate the colors of the border and background images
+            sequence.Join(borderImage.DOColor(borderColor, fadeDuration));
+            sequence.Join(backgroundImage.DOColor(backgroundColor, fadeDuration));
+            sequence.Join(textField.DOColor(fontColor, fadeDuration));
+
+            // Animate the font size and character spacing of the text field
+            sequence.Join(textField.DOFontSize(fontSize, fadeDuration));
+            sequence.Join(textField.DOTextMeshProSpacing(fontSpacing, fadeDuration));
         }
 
         #endregion

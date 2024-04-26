@@ -1,5 +1,5 @@
 using Baracuda.Mediator.Values;
-using PrimeTween;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -63,16 +63,16 @@ namespace Baracuda.UI
 
         private void FadeIn()
         {
-            Tween.StopAll(this);
-            Tween.Custom(this, canvasGroup.alpha, 1, fadeInDurationInSeconds,
-                (controller, value) => controller.canvasGroup.alpha = value);
+            DOTween.Kill(this);
+            var sequence = DOTween.Sequence(this);
+            sequence.Append(canvasGroup.DOFade(1, fadeInDurationInSeconds));
         }
 
         private void FadeOut()
         {
-            Tween.StopAll(this);
-            Tween.Custom(this, canvasGroup.alpha, 0, fadeOutDurationInSeconds,
-                (controller, value) => controller.canvasGroup.alpha = value);
+            DOTween.Kill(this);
+            var sequence = DOTween.Sequence(this);
+            sequence.Append(canvasGroup.DOFade(0, fadeOutDurationInSeconds));
         }
     }
 }

@@ -1,16 +1,18 @@
 ﻿using Baracuda.Mediator.Cursor;
 using Baracuda.Mediator.Events;
-using Baracuda.Mediator.Singleton;
+using Baracuda.Mediator.Services;
 using System;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
 namespace Baracuda.UI
 {
-    public class Controls : SingletonBehaviour<Controls>, IHideCursor
+    [RequireComponent(typeof(PlayerInput))]
+    public class InputManager : MonoBehaviour, IHideCursor
     {
         [SerializeField] private PlayerInput playerInput;
         [SerializeField] private InputActionReference navigateInputAction;
@@ -19,6 +21,8 @@ namespace Baracuda.UI
         [Header("Schemes")]
         [SerializeField] private string[] controllerSchemes;
         [SerializeField] private HideCursorLocks cursorHide;
+
+        public PlayerInput PlayerInput => playerInput;
 
         public static bool IsGamepadScheme { get; private set; }
         public static InteractionMode InteractionMode { get; private set; }
@@ -49,7 +53,7 @@ namespace Baracuda.UI
             remove => onMouseInputReceived.Remove(value);
         }
 
-        public static bool HasSelected => Selected != null;
+        public static bool HasSelectable => Selected != null;
         public static Selectable Selected { get; private set; }
 
         public static event Action<Selectable> SelectionChanged
@@ -74,10 +78,8 @@ namespace Baracuda.UI
 
         private GameObject _lastEventSystemSelection;
 
-        protected override void Awake()
+        private void Awake()
         {
-            base.Awake();
-
             playerInput.onControlsChanged += OnControlsChanged;
             navigateInputAction.action.performed += OnNavigationInput;
             foreach (var inputActionReference in mouseInputActions)
@@ -86,9 +88,13 @@ namespace Baracuda.UI
             }
         }
 
-        protected override void OnDestroy()
+        private void Start()
         {
-            base.OnDestroy();
+            playerInput.uiInputModule = ServiceLocator.Global.Get<InputSystemUIInputModule>();
+        }
+
+        private void OnDestroy()
+        {
             playerInput.onControlsChanged -= OnControlsChanged;
             navigateInputAction.action.performed -= OnNavigationInput;
             foreach (var inputActionReference in mouseInputActions)
@@ -144,7 +150,6 @@ namespace Baracuda.UI
         private void OnMouseInput(InputAction.CallbackContext context)
         {
             InteractionMode = InteractionMode.Mouse;
-            //EventSystem.current.SetSelectedGameObject(null);
             if (EnableNavigationEvents)
             {
                 onMouseInputReceived.Raise();
@@ -173,7 +178,7 @@ namespace Baracuda.UI
             }
 
             Selected = selectedObject.GetComponent<Selectable>();
-            if (HasSelected)
+            if (HasSelectable)
             {
                 onSelectionChanged.Raise(Selected);
             }

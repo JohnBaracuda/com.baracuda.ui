@@ -1,5 +1,4 @@
-﻿using Baracuda.Utilities;
-using PrimeTween;
+﻿using DG.Tweening;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -62,8 +61,6 @@ namespace Baracuda.UI
         [Header("Noise")]
         [SerializeField] private UISpritesAnimation noiseAnimation;
 
-        private Sequence _fillSequence;
-        private Sequence _sequence;
         private bool _isSelected;
         private bool _isHover;
 
@@ -81,8 +78,8 @@ namespace Baracuda.UI
 
         private void OnDestroy()
         {
-            _fillSequence.Stop();
-            _sequence.Stop();
+            DOTween.Kill(this);
+            DOTween.Kill(fillImage);
             button.HoldStarted -= OnHoldStarted;
             button.HoldProgress -= OnHoldProgress;
             button.HoldCancelled -= OnHoldCancelled;
@@ -128,9 +125,9 @@ namespace Baracuda.UI
 
         private void OnHoldCancelled()
         {
-            _fillSequence.Stop();
-            _fillSequence = Sequence.Create();
-            _fillSequence.Chain(Tween.UIFillAmount(fillImage, 0, .3f));
+            DOTween.Kill(fillImage);
+            var fillSequence = DOTween.Sequence(fillImage);
+            fillSequence.Append(fillImage.DOFillAmount(0, .3f));
             if (_isSelected)
             {
                 FadeToSelected(recoverDuration, Ease.InSine);
@@ -218,7 +215,7 @@ namespace Baracuda.UI
                 fontSizeNormal,
                 characterSpacingNormal,
                 duration ?? fadeDuration,
-                ease ?? Ease.Default);
+                ease ?? Ease.InOutSine);
         }
 
         private void FadeToSelected(float? duration = null, Ease? ease = null)
@@ -231,7 +228,7 @@ namespace Baracuda.UI
                 fontSizeSelected,
                 characterSpacingSelected,
                 duration ?? selectDuration,
-                ease ?? Ease.Default);
+                ease ?? Ease.InOutSine);
         }
 
         private void FadeToHover(float? duration = null, Ease? ease = null)
@@ -244,22 +241,27 @@ namespace Baracuda.UI
                 fontSizeHover,
                 characterSpacingHover,
                 duration ?? hoverDuration,
-                ease ?? Ease.Default);
+                ease ?? Ease.InOutSine);
         }
 
         private void FadeTo(Color borderColor, Color backgroundColor, Color fontColor, float fontSize,
             float fontSpacing, float duration, Ease ease)
         {
-            if (_sequence.isAlive)
-            {
-                _sequence.Stop();
-            }
-            _sequence = Sequence.Create();
-            _sequence.Chain(Tween.Color(borderImage, borderColor, duration, ease));
-            _sequence.Group(Tween.Color(backgroundImage, backgroundColor, duration, ease));
-            _sequence.Group(Tween.Color(textField, fontColor, duration.WithMaxLimit(0.3f), ease));
-            _sequence.Group(TextMeshTween.FontSize(textField, fontSize, duration));
-            _sequence.Group(TextMeshTween.CharacterSpacing(textField, fontSpacing, duration));
+            this.DOKill();
+
+            var sequence = DOTween.Sequence(this);
+
+            // Adding the color animations to the sequence
+            sequence.Join(borderImage.DOColor(borderColor, duration).SetEase(ease));
+            sequence.Join(backgroundImage.DOColor(backgroundColor, duration).SetEase(ease));
+
+            // Applying max duration limit directly in the duration argument
+            var fontColorDuration = Mathf.Min(duration, 0.3f);
+            sequence.Join(textField.DOColor(fontColor, fontColorDuration).SetEase(ease));
+
+            // Adding font size and character spacing animations
+            sequence.Join(textField.DOFontSize(fontSize, duration).SetEase(ease));
+            sequence.Join(textField.DOTextMeshProSpacing(fontSpacing, duration).SetEase(ease));
         }
 
         #endregion

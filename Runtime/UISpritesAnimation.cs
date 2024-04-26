@@ -19,8 +19,9 @@ namespace Baracuda.UI
         private Timer _timer;
         private Loop _loop;
         private Action _update;
-        private bool _isEnabled;
         private float _updateInterval;
+
+        public bool IsPlaying { get; private set; }
 
         private void Awake()
         {
@@ -36,18 +37,18 @@ namespace Baracuda.UI
 
         public void Play()
         {
-            if (_isEnabled)
+            if (IsPlaying)
             {
                 return;
             }
-            _isEnabled = true;
+            IsPlaying = true;
             _image.color = playColor;
             Gameloop.Update += _update;
         }
 
         public void Stop()
         {
-            _isEnabled = false;
+            IsPlaying = false;
             _image.color = stopColor;
             Gameloop.Update -= _update;
         }

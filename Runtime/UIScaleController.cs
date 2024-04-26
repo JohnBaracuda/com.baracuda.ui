@@ -46,7 +46,7 @@ namespace Baracuda.UI
             canvasScaler ??= GetComponent<CanvasScaler>();
             if (canvasScaleFactorAsset == null)
             {
-                Debug.LogWarning("UI", "Canvas scale factor asset is null!", this);
+                Debug.LogWarning("UI", $"Canvas scale factor asset of {gameObject.name} is null!", this);
                 return;
             }
 #endif
