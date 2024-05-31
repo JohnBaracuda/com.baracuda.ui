@@ -1,4 +1,4 @@
-﻿using Baracuda.Bedrock.Callbacks;
+﻿using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.Utilities.Types;
 using DG.Tweening;
 using Sirenix.OdinInspector;

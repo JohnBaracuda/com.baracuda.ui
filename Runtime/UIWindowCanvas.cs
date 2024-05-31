@@ -1,5 +1,5 @@
-﻿using Baracuda.Bedrock.Callbacks;
-using Baracuda.Bedrock.Injection;
+﻿using Baracuda.Bedrock.Injection;
+using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.Bedrock.Services;
 using Baracuda.Utilities;
 using Cysharp.Threading.Tasks;

@@ -1,4 +1,4 @@
-﻿using Baracuda.Bedrock.Callbacks;
+﻿using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.UI.Mediator;
 using Baracuda.Utilities;
 using DG.Tweening;

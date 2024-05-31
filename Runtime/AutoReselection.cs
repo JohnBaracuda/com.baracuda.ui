@@ -1,4 +1,4 @@
-﻿using Baracuda.Bedrock.Callbacks;
+﻿using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.Bedrock.Services;
 using Sirenix.OdinInspector;
 using UnityEngine;
