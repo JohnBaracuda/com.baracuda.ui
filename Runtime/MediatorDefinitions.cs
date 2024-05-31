@@ -1,4 +1,4 @@
-﻿using Baracuda.Mediator.Generation;
+﻿using Baracuda.Bedrock.Generation;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using static Baracuda.UI.MediatorDefinitions;

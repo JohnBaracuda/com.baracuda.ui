@@ -1,4 +1,5 @@
-﻿using DG.Tweening;
+﻿using Baracuda.Bedrock.Callbacks;
+using DG.Tweening;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -24,7 +25,9 @@ namespace Baracuda.UI
         [SerializeField] [Required] private TMP_Text textField;
 
         [Header("Fill")]
-        [SerializeField] [Required] private AnimationCurve fillCurve;
+        [SerializeField] [Required] private Color fillColorFrom;
+        [SerializeField] [Required] private Color fillColorTo;
+        [SerializeField] [Required] private AnimationCurve fillCurve = AnimationCurve.Linear(0, 0, 1, 1);
 
         [Header("Text")]
         [SerializeField] [Required] private AnimationCurve colorCurve;
@@ -69,20 +72,31 @@ namespace Baracuda.UI
 
         #region Setup & Shutdown
 
-        private void Awake()
+        private void OnEnable()
         {
             button.HoldStarted += OnHoldStarted;
             button.HoldProgress += OnHoldProgress;
             button.HoldCancelled += OnHoldCancelled;
+            button.HoldCompleted += OnHoldCompleted;
+            OnHoldCancelled();
+            this.DOComplete();
+            fillImage.DOComplete();
         }
 
-        private void OnDestroy()
+        private void OnDisable()
         {
-            DOTween.Kill(this);
-            DOTween.Kill(fillImage);
+            _isHover = false;
+            _isSelected = false;
             button.HoldStarted -= OnHoldStarted;
             button.HoldProgress -= OnHoldProgress;
             button.HoldCancelled -= OnHoldCancelled;
+            button.HoldCompleted -= OnHoldCompleted;
+            if (Gameloop.IsQuitting)
+            {
+                return;
+            }
+            DOTween.Kill(this);
+            DOTween.Kill(fillImage);
         }
 
         private void OnValidate()
@@ -112,6 +126,7 @@ namespace Baracuda.UI
         private void OnHoldStarted()
         {
             FadeToNormal();
+            noiseAnimation.Play();
         }
 
         private void OnHoldProgress(float delta)
@@ -121,9 +136,28 @@ namespace Baracuda.UI
 
             var colorProgress = colorCurve.Evaluate(delta);
             textField.color = Color.Lerp(fromTextColor, toTextColor, colorProgress);
+            fillImage.color = Color.Lerp(fillColorFrom, fillColorTo, colorProgress);
         }
 
         private void OnHoldCancelled()
+        {
+            DOTween.Kill(fillImage);
+            var fillSequence = DOTween.Sequence(fillImage);
+            fillSequence.Append(fillImage.DOFillAmount(0, .3f));
+            if (_isSelected)
+            {
+                FadeToSelected(recoverDuration, Ease.InSine);
+                return;
+            }
+            if (_isHover)
+            {
+                FadeToHover(recoverDuration, Ease.InSine);
+                return;
+            }
+            FadeToNormal(recoverDuration, Ease.InSine);
+        }
+
+        private void OnHoldCompleted()
         {
             DOTween.Kill(fillImage);
             var fillSequence = DOTween.Sequence(fillImage);
@@ -261,7 +295,7 @@ namespace Baracuda.UI
 
             // Adding font size and character spacing animations
             sequence.Join(textField.DOFontSize(fontSize, duration).SetEase(ease));
-            sequence.Join(textField.DOTextMeshProSpacing(fontSpacing, duration).SetEase(ease));
+            sequence.Join(textField.DOCharacterSpacing(fontSpacing, duration).SetEase(ease));
         }
 
         #endregion

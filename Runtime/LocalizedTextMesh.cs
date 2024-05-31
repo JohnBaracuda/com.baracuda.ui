@@ -7,25 +7,28 @@ using UnityEngine.Localization;
 namespace Baracuda.UI
 {
     [ExecuteAlways]
-    [RequireComponent(typeof(TMP_Text))]
     public class LocalizedTextMesh : MonoBehaviour
     {
-        [SerializeField] private LocalizedString displayName;
-        [ReadOnly]
-        [SerializeField] private TMP_Text textMesh;
+        [SerializeField] private LocalizedString localizedString;
+        [ReadOnly] [SerializeField] private TMP_Text textMesh;
+
+        private void OnValidate()
+        {
+            textMesh ??= GetComponentInChildren<TMP_Text>(true);
+        }
 
         private void OnEnable()
         {
-            textMesh ??= GetComponent<TMP_Text>();
-            displayName.StringChanged += OnLocalizedDisplayNameChanged;
+            textMesh ??= GetComponentInChildren<TMP_Text>(true);
+            localizedString.StringChanged += OnLocalizedLocalizedStringChanged;
         }
 
         private void OnDisable()
         {
-            displayName.StringChanged -= OnLocalizedDisplayNameChanged;
+            localizedString.StringChanged -= OnLocalizedLocalizedStringChanged;
         }
 
-        private void OnLocalizedDisplayNameChanged(string value)
+        private void OnLocalizedLocalizedStringChanged(string value)
         {
             if (value.IsNotNullOrWhitespace())
             {

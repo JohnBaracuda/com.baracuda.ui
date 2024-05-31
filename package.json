@@ -10,7 +10,7 @@
   "dependencies": {
     "com.baracuda.utilities": "1.0.0",
     "com.baracuda.debug": "1.0.0",
-    "com.baracuda.mediator": "1.0.0"
+    "com.baracuda.bedrock": "1.0.0"
   },
   "keywords": [
     "user interface",

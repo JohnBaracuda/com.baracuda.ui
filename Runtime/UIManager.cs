@@ -1,59 +1,81 @@
-﻿using Baracuda.Mediator.Injection;
-using Baracuda.Mediator.Locks;
-using Baracuda.Tools;
+﻿using Baracuda.Bedrock.Events;
+using Baracuda.Bedrock.Injection;
+using Baracuda.Bedrock.Locks;
+using Baracuda.Bedrock.Odin;
 using Baracuda.Utilities;
-using Baracuda.Utilities.Types;
+using Baracuda.Utilities.Collections;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
+using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace Baracuda.UI
 {
     public class UIManager : MonoBehaviour
     {
-        #region Data
+        #region Events
 
-        [Inject] [Debug] private readonly CanvasSystemSettings _settings;
-
-        private readonly Dictionary<Type, UIComponent> _instances = new();
-        private readonly Dictionary<Type, Func<UIComponent>> _provider = new();
-        private readonly Dictionary<Type, Action<UIComponent>> _disposer = new();
-        private readonly Dictionary<Type, Func<Task<UIComponent>>> _asyncProvider = new();
-        private readonly Dictionary<Type, Action<UIComponent>> _asyncDisposer = new();
-        private readonly HashSet<Type> _asyncLocks = new();
-
-        private readonly Dictionary<(Type, Type), Delegate> _transitionOverrides;
-
-        [ReadonlyInspector]
-        private List<UIComponent> Stack => UIStack.ToList();
-
-        [ReadonlyInspector]
-        private List<IReturnConsumer> ReturnConsumeStack => ReturnConsumerStack.ToList();
-
-        public IEnumerable<UIComponent> Instances => _instances.Values;
-
-        #endregion
-
-
-        #region Initialization & Shutdown
-
-        private void Start()
+        /// <summary>
+        ///     Triggered when the open sequence of a UI window starts.
+        /// </summary>
+        [PublicAPI]
+        public event Action<UIWindow> OpenSequenceStarted
         {
-            _settings.ReturnInput.action.performed -= OnReturnPressed;
-            _settings.ReturnInput.action.performed += OnReturnPressed;
+            add => _openSequenceStarted.Add(value);
+            remove => _openSequenceStarted.Remove(value);
         }
 
-        private void OnDestroy()
+        /// <summary>
+        ///     Triggered when the open sequence of a UI window completes.
+        /// </summary>
+        [PublicAPI]
+        public event Action<UIWindow> OpenSequenceCompleted
         {
-            ReturnConsumerStack.Clear();
-            UIStack.Clear();
-            _settings.ReturnInput.action.performed -= OnReturnPressed;
+            add => _openSequenceCompleted.Add(value);
+            remove => _openSequenceCompleted.Remove(value);
+        }
+
+        /// <summary>
+        ///     Triggered when the close sequence of a UI window starts.
+        /// </summary>
+        [PublicAPI]
+        public event Action<UIWindow> CloseSequenceStarted
+        {
+            add => _closeSequenceStarted.Add(value);
+            remove => _closeSequenceStarted.Remove(value);
+        }
+
+        /// <summary>
+        ///     Triggered when the close sequence of a UI window completes.
+        /// </summary>
+        [PublicAPI]
+        public event Action<UIWindow> CloseSequenceCompleted
+        {
+            add => _closeSequenceCompleted.Add(value);
+            remove => _closeSequenceCompleted.Remove(value);
+        }
+
+        /// <summary>
+        ///     Triggered when a transition between two UI windows starts.
+        /// </summary>
+        [PublicAPI]
+        public event Action<UIWindow, UIWindow> TransitionStarted
+        {
+            add => _transitionStarted.Add(value);
+            remove => _transitionStarted.Remove(value);
+        }
+
+        /// <summary>
+        ///     Triggered when a transition between two UI windows completes.
+        /// </summary>
+        [PublicAPI]
+        public event Action<UIWindow, UIWindow> TransitionCompleted
+        {
+            add => _transitionCompleted.Add(value);
+            remove => _transitionCompleted.Remove(value);
         }
 
         #endregion
@@ -61,114 +83,298 @@ namespace Baracuda.UI
 
         #region Public API
 
-        public Lock UILocks { get; } = new();
-        public Lock ReturnLocks { get; } = new();
-        public StackList<IReturnConsumer> ReturnConsumerStack { get; } = new();
-        public StackList<UIComponent> UIStack { get; } = new();
+        /// <summary>
+        ///     UI Container holding every available UI Prefab or provider method.
+        /// </summary>
+        [PublicAPI]
+        public UIContainer Container { get; private set; }
 
+        /// <summary>
+        ///     Lock to disable UI interaction.
+        /// </summary>
+        [PublicAPI]
+        public Lock UILocks { get; } = new();
+
+        /// <summary>
+        ///     Closes all windows asynchronously.
+        /// </summary>
+        [PublicAPI]
         public async UniTask CloseAllWindowsAsync()
         {
             await CloseAllWindowsAsyncInternal();
         }
 
+        /// <summary>
+        ///     Closes all windows immediately.
+        /// </summary>
+        [PublicAPI]
         public void CloseAllWindowsImmediate()
         {
             CloseAllWindowsImmediateInternal();
         }
 
-        public void Preload<T>() where T : UIComponent
+        /// <summary>
+        ///     Preloads the specified UI window.
+        /// </summary>
+        [PublicAPI]
+        public void Preload<T>() where T : UIWindow
         {
-            LoadInternal<T>().Forget();
+            Container.Load<T>().Forget();
         }
 
-        public async UniTask PreloadAsync<T>() where T : UIComponent
+        /// <summary>
+        ///     Preloads the specified UI window asynchronously.
+        /// </summary>
+        [PublicAPI]
+        public async UniTask<T> PreloadAsync<T>() where T : UIWindow
         {
-            await LoadInternal<T>();
+            return await Container.Load<T>();
         }
 
-        public void Unload<T>() where T : UIComponent
+        /// <summary>
+        ///     Unloads the specified UI window.
+        /// </summary>
+        [PublicAPI]
+        public void Unload<T>() where T : UIWindow
         {
-            UnloadInternal<T>();
+            Container.Unload<T>();
         }
 
-        public void Open<T>(T instance = null) where T : UIComponent
+        /// <summary>
+        ///     Opens the specified UI window.
+        /// </summary>
+        [PublicAPI]
+        public void Open<T>(T instance = null) where T : UIWindow
         {
             OpenInternal(instance).Forget();
         }
 
-        public async UniTask<T> OpenAsync<T>(T instance = null) where T : UIComponent
+        /// <summary>
+        ///     Opens the specified UI window immediately.
+        /// </summary>
+        [PublicAPI]
+        public void OpenImmediate<T>(T instance = null) where T : UIWindow
+        {
+            OpenImmediateInternal(instance);
+        }
+
+        /// <summary>
+        ///     Opens the specified UI window asynchronously.
+        /// </summary>
+        [PublicAPI]
+        public async UniTask<T> OpenAsync<T>(T instance = null) where T : UIWindow
         {
             return await OpenInternal(instance);
         }
 
-        public void Close<T>(T instance = null) where T : UIComponent
+        /// <summary>
+        ///     Closes the specified UI window.
+        /// </summary>
+        [PublicAPI]
+        public void Close<T>(T instance = null) where T : UIWindow
         {
             CloseInternal(instance).Forget();
         }
 
-        public async UniTask CloseAsync<T>(T instance = null) where T : UIComponent
+        /// <summary>
+        ///     Closes the specified UI window immediately.
+        /// </summary>
+        [PublicAPI]
+        public void CloseImmediate<T>(T instance = null) where T : UIWindow
+        {
+            CloseImmediateInternal(instance);
+        }
+
+        /// <summary>
+        ///     Closes the specified UI window asynchronously.
+        /// </summary>
+        [PublicAPI]
+        public async UniTask CloseAsync<T>(T instance = null) where T : UIWindow
         {
             await CloseInternal(instance);
-        }
-
-        public void Register<T>(T instance = null) where T : UIComponent
-        {
-            RegisterInternal(typeof(T), instance);
-        }
-
-        public void Register(Type type, UIComponent instance = null)
-        {
-            RegisterInternal(type, instance);
-        }
-
-        public void Register<T>(Func<T> provider, Action<UIComponent> disposer)
-            where T : UIComponent
-        {
-            RegisterProviderInternal(provider, disposer);
-        }
-
-        public void Register<T>(Func<AsyncOperationHandle<T>> provider, Action<UIComponent> disposer,
-            bool preload = true)
-            where T : UIComponent
-        {
-            RegisterAsyncProviderInternal(provider, disposer, preload);
-        }
-
-        public void Unregister(Type type, UIComponent instance = null)
-        {
-            UnregisterInternal(type, instance);
         }
 
         #endregion
 
 
-        #region OpenAsync
+        #region Fields
 
-        private async UniTask<T> OpenInternal<T>(T instance = null) where T : UIComponent
+        [ReadonlyInspector]
+        private List<UIWindow> Stack => _stack.List;
+
+        private readonly StackList<UIWindow> _stack = new();
+
+        private readonly Broadcast<UIWindow> _openSequenceStarted = new();
+        private readonly Broadcast<UIWindow> _openSequenceCompleted = new();
+        private readonly Broadcast<UIWindow> _closeSequenceStarted = new();
+        private readonly Broadcast<UIWindow> _closeSequenceCompleted = new();
+        private readonly Broadcast<UIWindow, UIWindow> _transitionStarted = new();
+        private readonly Broadcast<UIWindow, UIWindow> _transitionCompleted = new();
+
+        [Inject] [Debug] private readonly UISettings _settings;
+        [Inject] [Debug] private readonly InputManager _inputManager;
+
+        private Sequence _sequence;
+
+        #endregion
+
+
+        #region Initialization & Shutdown
+
+        private void Awake()
         {
-            if (instance != null)
+            Container = gameObject.GetOrAddComponent<UIContainer>();
+            UILocks.FirstAdded += LockUI;
+            UILocks.LastRemoved += UnlockUI;
+        }
+
+        public void Start()
+        {
+            _inputManager.AddDiscreteEscapeListener(OnEscapePressed);
+        }
+
+        private void OnDestroy()
+        {
+            _stack.Clear();
+            _inputManager.RemoveDiscreteEscapeListener(OnEscapePressed);
+            UILocks.FirstAdded -= LockUI;
+            UILocks.LastRemoved -= UnlockUI;
+            Container.Dispose();
+            Container = null;
+        }
+
+        private void OnEscapePressed()
+        {
+            if (_sequence.IsActive())
             {
-                await instance.OpenAsync();
-                return instance;
+                _sequence.Complete(true);
+            }
+        }
+
+        internal void AddSceneObject(UIWindow window)
+        {
+            Container.Add(window.GetType(), window);
+            window.State = WindowState.Open;
+            var settings = window.Settings;
+            if (settings.StartVisibility is false)
+            {
+                CloseImmediate(window);
+            }
+            else
+            {
+                _stack.PushUnique(window);
+                window.GainFocus();
+            }
+        }
+
+        internal void RemoveSceneObject(UIWindow window)
+        {
+            Container.Remove(window.GetType(), window);
+        }
+
+        #endregion
+
+
+        #region Open
+
+        private void OpenImmediateInternal<T>(T window = null) where T : UIWindow
+        {
+            OpenInternal(window).Forget();
+            _sequence.Complete(true);
+        }
+
+        private async UniTask<T> OpenInternal<T>(T window = null) where T : UIWindow
+        {
+            window ??= await Container.Load<T>();
+
+            // If the window is already open just return it.
+            if (window.IsOpen)
+            {
+                return window;
             }
 
-            if (_instances.TryGetValue(typeof(T), out var component))
+            // Force the current sequence to complete if opening another window was requested.
+            if (_sequence.IsActive())
             {
-                await component.OpenAsync();
-                return (T) component;
+                _sequence.Complete(true);
             }
 
-            instance = await LoadInternal<T>();
-            await instance.OpenAsync();
-            return instance;
+            window.State = WindowState.Opening;
+            window.OnOpenStarted();
 
-            /*
-             * Begin consume escape
-             * Remove Focus from active UI
-             * Start Close Sequence for active UI
-             * Start OpenAsync Sequence for new UI
-             * End consume escape
-             */
+            var isCurrentWindowActive = _stack.TryPeek(out var priorWindow);
+
+            _transitionStarted.Raise(priorWindow, window);
+            _openSequenceStarted.Raise(window);
+
+            var settings = window.Settings;
+
+            if (settings.OverrideNavigation)
+            {
+                // this could also be performed by UI in on open callbacks.
+                var clearSelectionOnMouseMovement = settings.ClearSelectionOnMouseMovement;
+                _inputManager.ClearSelectionOnMouseMovement.Add(clearSelectionOnMouseMovement, window);
+            }
+
+            _sequence = DOTween.Sequence();
+            _sequence.SetRecyclable(false);
+
+            // Hide active window and remove focus.
+            if (isCurrentWindowActive)
+            {
+                if (settings.HideUnderlyingUI)
+                {
+                    var hideSequence = priorWindow.HideAsync(true);
+                    _sequence.Append(hideSequence);
+                }
+                if (priorWindow.Settings.Standalone is false)
+                {
+                    priorWindow.LoseFocus();
+                }
+            }
+
+            // Show next window and gain focus.
+            var showSequence = window.ShowAsync(false);
+
+            // Wait for the other ui to be closed when necessary
+            if (settings.WaitForOtherUIToCloseBeforeOpening)
+            {
+                _sequence.AppendCallback(() =>
+                {
+                    window.gameObject.SetActive(true);
+                    _stack.PushUnique(window);
+                });
+                if (window.Settings.Standalone is false)
+                {
+                    _sequence.AppendCallback(window.GainFocus);
+                }
+                _sequence.Append(showSequence);
+            }
+            else
+            {
+                window.gameObject.SetActive(true);
+                _stack.PushUnique(window);
+                if (window.Settings.Standalone is false)
+                {
+                    window.GainFocus();
+                }
+                _sequence.Join(showSequence);
+            }
+
+            _sequence.AppendCallback(() =>
+            {
+                window.gameObject.SetActive(true);
+                window.State = WindowState.Open;
+                window.OnOpenCompleted();
+                _openSequenceCompleted.Raise(window);
+                _transitionCompleted.Raise(priorWindow, window);
+                _sequence.SetRecyclable(true);
+                _sequence = null;
+            });
+
+            // Await the transition sequence.
+            await _sequence.AsyncWaitForCompletion().AsUniTask();
+            return window;
         }
 
         #endregion
@@ -176,136 +382,107 @@ namespace Baracuda.UI
 
         #region Close
 
-        private async UniTask CloseInternal<T>(T instance = null) where T : UIComponent
+        private void CloseImmediateInternal<T>(T window = null) where T : UIWindow
         {
-            if (instance != null)
-            {
-                await instance.CloseAsync();
-                return;
-            }
-
-            if (_instances.TryGetValue(typeof(T), out var component))
-            {
-                await component.CloseAsync();
-                return;
-            }
-
-            if (_asyncLocks.Contains(typeof(T)))
-            {
-                Debug.LogWarning("UI", $"An async operation is currently locking {typeof(T).Name}");
-            }
+            CloseInternal(window).Forget();
+            _sequence.Complete(true);
         }
 
-        #endregion
-
-
-        #region Loading
-
-        private async UniTask<T> LoadInternal<T>() where T : UIComponent
+        private async UniTask CloseInternal<T>(T window = null) where T : UIWindow
         {
-            var key = typeof(T);
+            window ??= Container.Get<T>();
 
-            if (_asyncLocks.Contains(key))
-            {
-                Debug.LogWarning("UI", $"An async operation is currently locking {key.Name}");
-                return null;
-            }
-
-            if (_instances.TryGetValue(key, out var instance))
-            {
-                return (T) instance;
-            }
-
-            if (_provider.TryGetValue(key, out var providerFunc))
-            {
-                instance = providerFunc();
-                UpdateSiblingIndex(instance);
-                _instances.Add(key, instance);
-                return (T) instance;
-            }
-
-            if (_asyncProvider.TryGetValue(key, out var asyncProviderFunc))
-            {
-                _asyncLocks.Add(key);
-                instance = await asyncProviderFunc();
-                UpdateSiblingIndex(instance);
-                _instances.Add(key, instance);
-                _asyncLocks.Remove(key);
-                return (T) instance;
-            }
-
-            return null;
-        }
-
-        private void UnloadInternal<T>() where T : UIComponent
-        {
-            var key = typeof(T);
-
-            if (_asyncLocks.Contains(key))
-            {
-                Debug.LogWarning("UI", $"An async operation is currently locking {key.Name}");
-                return;
-            }
-
-            if (!_instances.TryRemove(key, out var instance))
+            if (window == null)
             {
                 return;
             }
 
-            if (_disposer.TryGetValue(key, out var disposerAction))
+            // If the window is already closed just return.
+            if (window.IsClosed)
             {
-                disposerAction(instance);
                 return;
             }
 
-            if (_asyncDisposer.TryGetValue(key, out disposerAction))
+            // Force the current sequence to complete if closing another window was requested.
+            if (_sequence.IsActive())
             {
-                disposerAction(instance);
-                return;
+                _sequence.Complete(true);
             }
 
-            Destroy(instance);
-        }
+            window.State = WindowState.Closing;
+            window.OnCloseStarted();
+            _closeSequenceStarted.Raise(window);
 
-        #endregion
-
-
-        #region UI Registration
-
-        private void RegisterInternal(Type type, UIComponent instance)
-        {
-            _instances.TryAdd(type, instance);
-        }
-
-        private void RegisterProviderInternal<T>(Func<T> provider, Action<UIComponent> disposer)
-            where T : UIComponent
-        {
-            _provider.Add(typeof(T), provider);
-            _disposer.Add(typeof(T), disposer);
-        }
-
-        private void RegisterAsyncProviderInternal<T>(Func<AsyncOperationHandle<T>> provider,
-            Action<UIComponent> disposer,
-            bool preload)
-            where T : UIComponent
-        {
-            _asyncProvider.Add(typeof(T), async () =>
+            var settings = window.Settings;
+            if (settings.OverrideNavigation)
             {
-                var result = await provider().Task;
-                return result;
+                // this could also be performed by UI in on open callbacks.
+                _inputManager.ClearSelectionOnMouseMovement.Remove(window);
+            }
+
+            var isActiveWindow = _stack.TryPeek(out var activeWindow) && activeWindow == window;
+            _stack.Remove(window);
+
+            var nextWindow = _stack.Peek();
+            var hasNextWindow = nextWindow is not null;
+            _transitionStarted.Raise(window, _stack.Peek());
+
+            _sequence = DOTween.Sequence();
+            _sequence.SetRecyclable(false);
+
+            var hideSequence = window.HideAsync(false);
+            _sequence.Append(hideSequence);
+            _sequence.AppendCallback(() =>
+            {
+                window.OnCloseCompleted();
+                window.gameObject.SetActive(false);
+                window.State = WindowState.Closed;
+                _closeSequenceCompleted.Raise(window);
+                _transitionCompleted.Raise(window, nextWindow);
+                _sequence.SetRecyclable(true);
+                _sequence = null;
             });
 
-            _asyncDisposer.Add(typeof(T), disposer);
-
-            if (preload)
+            if (isActiveWindow)
             {
-                Preload<T>();
+                if (window.Settings.Standalone is false)
+                {
+                    window.LoseFocus();
+                }
+                if (hasNextWindow)
+                {
+                    if (settings.HideUnderlyingUI)
+                    {
+                        nextWindow.gameObject.SetActive(true);
+                        var showSequence = nextWindow.ShowAsync(true);
+                        if (settings.WaitForCloseBeforeShowingPreviousUI)
+                        {
+                            _sequence.Append(showSequence);
+                            if (nextWindow.Settings.Standalone is false)
+                            {
+                                _sequence.AppendCallback(nextWindow.GainFocus);
+                            }
+                        }
+                        else
+                        {
+                            _sequence.Join(showSequence);
+                            if (nextWindow.Settings.Standalone is false)
+                            {
+                                nextWindow.GainFocus();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (nextWindow.Settings.Standalone is false)
+                        {
+                            nextWindow.GainFocus();
+                        }
+                    }
+                }
             }
-        }
 
-        private void UnregisterInternal(Type type, UIComponent instance = null)
-        {
-            _instances.Remove(type);
+            await _sequence.AsyncWaitForCompletion().AsUniTask();
         }
 
         #endregion
@@ -315,77 +492,41 @@ namespace Baracuda.UI
 
         private void CloseAllWindowsImmediateInternal()
         {
-            while (UIStack.Any())
+            while (_stack.Any())
             {
-                UIStack.Peek().CloseImmediate();
+                CloseImmediate(_stack.Peek());
             }
         }
 
         private async UniTask CloseAllWindowsAsyncInternal()
         {
-            var buffer = new Stack<UIComponent>(UIStack);
-            UIStack.Clear();
+            var buffer = new Stack<UIWindow>(_stack);
+            _stack.Clear();
             while (buffer.TryPop(out var element))
             {
-                if (element.IsVisible)
-                {
-                    Debug.Log("UI", $"Closing Async {element}");
-                    await element.CloseAsync();
-                    Debug.Log("UI", $"Closed Async {element}");
-                }
-                else
-                {
-                    Debug.Log("UI", $"Closing Immediate {element}");
-                    element.CloseImmediate();
-                }
+                await CloseAsync(element);
             }
         }
 
         #endregion
 
 
-        #region Return Pressed
+        #region UI Locking
 
-        private void OnReturnPressed(InputAction.CallbackContext context)
+        private void LockUI()
         {
-            if (ReturnLocks.HasAny())
+            if (_stack.TryPeek(out var window))
             {
-                return;
-            }
-            if (UIComponent.TransitionSequence.IsActive())
-            {
-                UIComponent.TransitionSequence.Complete(true);
-                return;
-            }
-            foreach (var consumer in ReturnConsumerStack.Reverse())
-            {
-                if (consumer.TryConsumeReturn())
-                {
-                    break;
-                }
+                window.LoseFocus();
             }
         }
 
-        public void LockReturnConsume(object dummy)
+        private void UnlockUI()
         {
-            ReturnLocks.Add(dummy);
-        }
-
-        public async void UnlockReturnConsume(object dummy)
-        {
-            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
-            ReturnLocks.Remove(dummy);
-        }
-
-        #endregion
-
-
-        #region Misc
-
-        private void UpdateSiblingIndex(UIComponent uiComponent)
-        {
-            var siblingIndex = _instances.FirstOrDefault().Value?.transform.GetSiblingIndex() ?? 0;
-            uiComponent.transform.SetSiblingIndex(siblingIndex);
+            if (_stack.TryPeek(out var window))
+            {
+                window.GainFocus();
+            }
         }
 
         #endregion

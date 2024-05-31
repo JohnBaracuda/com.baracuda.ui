@@ -1,8 +1,8 @@
-﻿using Baracuda.Mediator.Collections;
+﻿using Baracuda.Bedrock.Collections;
 
 namespace Baracuda.UI
 {
-    public class UIStack : StackAsset<UIComponent>
+    public class UIStack : StackAsset<UIWindow>
     {
     }
 }

@@ -1,4 +1,5 @@
-﻿using Baracuda.Utilities.Types;
+﻿using Baracuda.Bedrock.Callbacks;
+using Baracuda.Utilities.Types;
 using DG.Tweening;
 using Sirenix.OdinInspector;
 using System;
@@ -21,40 +22,55 @@ namespace Baracuda.UI
 
         [SerializeField] private Button targetButton;
         [SerializeField] private float fadeDuration = .2f;
+
         [Header("Border")]
         [SerializeField] [Required] private Image borderImage;
         [SerializeField] private Color borderColorNormal;
         [SerializeField] private Color borderColorSelected;
         [SerializeField] private Color borderColorHover;
+        [SerializeField] private Color borderColorLocked;
+
         [Header("Background")]
         [SerializeField] [Required] private Image backgroundImage;
         [SerializeField] private Color backgroundColorNormal;
         [SerializeField] private Color backgroundColorSelected;
         [SerializeField] private Color backgroundColorHover;
+        [SerializeField] private Color backgroundColorLocked;
+        [SerializeField] private Color animationColorNormal;
+        [SerializeField] private Color animationColorSelected;
+        [SerializeField] private Color animationColorHover;
+        [SerializeField] private Color animationColorLocked;
+
         [Header("Text")]
         [SerializeField] [Required] private TMP_Text textField;
         [SerializeField] private Color textColorNormal;
         [SerializeField] private Color textColorSelected;
         [SerializeField] private Color textColorHover;
+        [SerializeField] private Color textColorLocked;
         [SerializeField] private float fontSizeNormal = 16;
         [SerializeField] private float fontSizeSelected = 16;
         [SerializeField] private float fontSizeHover = 16;
+        [SerializeField] private float fontSizeLocked = 16;
         [SerializeField] private float characterSpacingNormal = 32;
         [SerializeField] private float characterSpacingSelected = 32;
         [SerializeField] private float characterSpacingHover = 32;
+        [SerializeField] private float characterSpacingLocked = 32;
+
         [Header("Font Assets")]
         [SerializeField] private TMP_FontAsset normalFont;
         [SerializeField] private Optional<TMP_FontAsset> hoverFont;
         [SerializeField] private Optional<TMP_FontAsset> selectedFont;
+        [SerializeField] private Optional<TMP_FontAsset> lockedFont;
+
         [Header("Noise")]
         [SerializeField] private UISpritesAnimation noiseAnimation;
 
-        private bool _isForceSelected;
-
         public bool IsSelected { get; private set; }
         public bool IsHovered { get; private set; }
+        public bool IsLocked { get; private set; }
         public event Action Selected;
         public event Action Deselected;
+        public Button Button => targetButton;
 
         #endregion
 
@@ -87,20 +103,42 @@ namespace Baracuda.UI
             }
         }
 
+        private void OnDisable()
+        {
+            if (Gameloop.IsQuitting)
+            {
+                return;
+            }
+            IsLocked = false;
+            IsSelected = false;
+            IsHovered = false;
+            FadeToNormal();
+        }
+
         #endregion
 
 
         #region Logic
 
-        public void ForceSelect()
+        public void Lock()
         {
-            _isForceSelected = true;
-            FadeToSelected();
+            IsLocked = true;
+            if (IsSelected)
+            {
+                FadeToSelected();
+                return;
+            }
+            if (IsHovered)
+            {
+                FadeToHover();
+                return;
+            }
+            FadeToLocked();
         }
 
-        public void ForceDeselect()
+        public void Unlock()
         {
-            _isForceSelected = false;
+            IsLocked = false;
             if (IsSelected)
             {
                 FadeToSelected();
@@ -122,10 +160,6 @@ namespace Baracuda.UI
             {
                 return;
             }
-            if (_isForceSelected)
-            {
-                return;
-            }
             FadeToSelected();
         }
 
@@ -133,8 +167,9 @@ namespace Baracuda.UI
         {
             Deselected?.Invoke();
             IsSelected = false;
-            if (_isForceSelected)
+            if (IsLocked)
             {
+                FadeToLocked();
                 return;
             }
             FadeToNormal();
@@ -147,33 +182,29 @@ namespace Baracuda.UI
             {
                 return;
             }
-            if (_isForceSelected)
-            {
-                return;
-            }
             FadeToHover();
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
             IsHovered = false;
-            if (_isForceSelected)
-            {
-                return;
-            }
             if (IsSelected)
             {
                 FadeToSelected();
+                return;
             }
-            else
+            if (IsLocked)
             {
-                FadeToNormal();
+                FadeToLocked();
+                return;
             }
+            FadeToNormal();
         }
 
         private void FadeToNormal()
         {
             textField.font = normalFont;
+            noiseAnimation.SetAnimationColor(animationColorNormal);
             noiseAnimation.Stop();
             FadeTo(
                 borderColorNormal,
@@ -189,6 +220,7 @@ namespace Baracuda.UI
             {
                 textField.font = selectedFont.Value;
             }
+            noiseAnimation.SetAnimationColor(animationColorSelected);
             noiseAnimation.Play();
             FadeTo(
                 borderColorSelected,
@@ -204,6 +236,7 @@ namespace Baracuda.UI
             {
                 textField.font = hoverFont.Value;
             }
+            noiseAnimation.SetAnimationColor(animationColorHover);
             noiseAnimation.Play();
             FadeTo(
                 borderColorHover,
@@ -213,7 +246,27 @@ namespace Baracuda.UI
                 characterSpacingHover);
         }
 
-        private void FadeTo(Color borderColor, Color backgroundColor, Color fontColor, float fontSize,
+        private void FadeToLocked()
+        {
+            if (lockedFont.Enabled)
+            {
+                textField.font = lockedFont.Value;
+            }
+            noiseAnimation.SetAnimationColor(animationColorLocked);
+            noiseAnimation.Play();
+            FadeTo(
+                borderColorLocked,
+                backgroundColorLocked,
+                textColorLocked,
+                fontSizeLocked,
+                characterSpacingLocked);
+        }
+
+        private void FadeTo(
+            Color borderColor,
+            Color backgroundColor,
+            Color textColor,
+            float fontSize,
             float fontSpacing)
         {
             this.DOKill();
@@ -223,11 +276,11 @@ namespace Baracuda.UI
             // Animate the colors of the border and background images
             sequence.Join(borderImage.DOColor(borderColor, fadeDuration));
             sequence.Join(backgroundImage.DOColor(backgroundColor, fadeDuration));
-            sequence.Join(textField.DOColor(fontColor, fadeDuration));
+            sequence.Join(textField.DOColor(textColor, fadeDuration));
 
             // Animate the font size and character spacing of the text field
             sequence.Join(textField.DOFontSize(fontSize, fadeDuration));
-            sequence.Join(textField.DOTextMeshProSpacing(fontSpacing, fadeDuration));
+            sequence.Join(textField.DOCharacterSpacing(fontSpacing, fadeDuration));
         }
 
         #endregion

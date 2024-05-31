@@ -1,5 +1,5 @@
 /*
- * Add this component to a RawImage, to automatically adjust the
+ * AddSingleton this component to a RawImage, to automatically adjust the
  * uvRect to make the image completely fill its bounds while
  * preserving its aspect ratio (by clipping the top/bottom or sides).
  */

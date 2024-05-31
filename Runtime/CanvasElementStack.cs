@@ -1,4 +1,4 @@
-﻿using Baracuda.Mediator.Collections;
+﻿using Baracuda.Bedrock.Collections;
 
 namespace Baracuda.UI
 {

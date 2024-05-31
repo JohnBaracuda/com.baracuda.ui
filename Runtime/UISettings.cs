@@ -1,11 +1,11 @@
-﻿using Baracuda.Mediator.Settings;
+﻿using Baracuda.Bedrock.Settings;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Baracuda.UI
 {
-    public class CanvasSystemSettings : SettingsAsset
+    public class UISettings : SettingsAsset
     {
         [SerializeField] [Required] private InputActionReference returnInput;
 

@@ -1,6 +1,6 @@
 ﻿namespace Baracuda.UI
 {
-    public class ViewAsset<T> where T : UIComponent
+    public class ViewAsset<T> where T : UIWindow
     {
     }
 }

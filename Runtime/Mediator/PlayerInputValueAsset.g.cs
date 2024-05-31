@@ -1,9 +1,9 @@
-using Baracuda.Mediator.Values;
+using Baracuda.Bedrock.Values;
 using UnityEngine.InputSystem;
 
 namespace Baracuda.UI
 {
-    public class PlayerInputValueAsset : ValueAsset<PlayerInput>
+    public class PlayerInputValueAsset : ValueAsset<UnityEngine.InputSystem.PlayerInput>
     {
     }
 }

@@ -1,5 +1,8 @@
-﻿using Baracuda.Mediator.Callbacks;
+﻿using Baracuda.Bedrock.Callbacks;
+using Baracuda.Utilities;
 using Baracuda.Utilities.Types;
+using DG.Tweening;
+using Sirenix.OdinInspector;
 using System;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,53 +12,93 @@ namespace Baracuda.UI
     [RequireComponent(typeof(Image))]
     public class UISpritesAnimation : MonoBehaviour
     {
+        [SerializeField] [Required] private UISpriteAnimationData animationData;
         [SerializeField] private bool autoPlay = true;
         [SerializeField] private int framesPerSecond = 24;
-        [SerializeField] private Sprite[] sprites;
         [SerializeField] private Color playColor;
         [SerializeField] private Color stopColor;
+        [SerializeField] private float fadeInTime;
+        [SerializeField] private float fadeOutTime;
+        [SerializeField] private bool randomizeStart = true;
+        [SerializeField] private Image image;
 
-        private Image _image;
         private Timer _timer;
         private Loop _loop;
         private Action _update;
+        private TweenCallback _onComplete;
         private float _updateInterval;
+        private Color _playColor;
 
         public bool IsPlaying { get; private set; }
 
         private void Awake()
         {
-            _image = GetComponent<Image>();
-            _loop = Loop.Create(sprites);
+            _playColor = playColor;
+            _loop = Loop.Create(animationData.Sprites);
+            if (randomizeStart)
+            {
+                _loop.Value = RandomUtility.Int(animationData.Sprites.Length - 1);
+            }
             _update = OnUpdate;
             _updateInterval = 1f / framesPerSecond;
+            _onComplete = () => Gameloop.Update -= _update;
             if (autoPlay)
             {
                 Play();
             }
         }
 
+        private void OnValidate()
+        {
+            image = GetComponent<Image>();
+        }
+
+        public void SetAnimationColor(Color color, bool animate = true)
+        {
+            _playColor = color;
+            if (animate && IsPlaying)
+            {
+                image.DOComplete(true);
+                image.DOColor(_playColor, fadeInTime).SetEase(Ease.InOutSine);
+            }
+        }
+
         public void Play()
         {
-            if (IsPlaying)
+            if (IsPlaying || !enabled)
             {
                 return;
             }
             IsPlaying = true;
-            _image.color = playColor;
+            image.DOComplete(true);
+            image.DOColor(_playColor, fadeInTime).SetEase(Ease.InOutSine);
             Gameloop.Update += _update;
         }
 
         public void Stop()
         {
+            if (!enabled)
+            {
+                return;
+            }
             IsPlaying = false;
-            _image.color = stopColor;
-            Gameloop.Update -= _update;
+            if (Gameloop.IsQuitting)
+            {
+                return;
+            }
+            image.DOComplete(true);
+            image.DOColor(stopColor, fadeOutTime).SetEase(Ease.InOutSine).OnComplete(_onComplete);
         }
 
         private void OnDestroy()
         {
             Stop();
+            Gameloop.Update -= _update;
+            if (Gameloop.IsQuitting)
+            {
+                return;
+            }
+            image.DOKill(true);
         }
 
         private void OnUpdate()
@@ -65,7 +108,7 @@ namespace Baracuda.UI
                 return;
             }
             _timer = Timer.FromSeconds(_updateInterval);
-            _image.sprite = sprites[_loop++];
+            image.sprite = animationData.Sprites[_loop++];
         }
     }
 }

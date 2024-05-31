@@ -4,35 +4,46 @@ using UnityEngine.UI;
 
 namespace Baracuda.UI
 {
-    [AddComponentMenu("UI/UI Component Settings")]
-    public sealed class UIComponentSettings : MonoBehaviour
+    [AddComponentMenu("UI/Window Settings")]
+    public sealed class WindowSettings : MonoBehaviour
     {
         #region Inspector
 
+        [SerializeField] private bool listenForEscapePress = true;
         [SerializeField] private bool isSceneObject;
         [SerializeField] private bool hideUnderlyingUI;
         [SerializeField] private bool hideOnFocusLoss;
         [SerializeField] private bool waitForOtherUIToCloseBeforeOpening;
+        [SerializeField] private bool waitForCloseBeforeShowingPreviousUI;
         [SerializeField] private bool startVisibility = true;
         [SerializeField] private bool autoSelectFirstObject = true;
+        [SerializeField] private bool forceFirstObjectSelection;
         [HideIf(nameof(autoSelectFirstObject))]
         [SerializeField] [Required] private Selectable firstSelected;
         [Tooltip("Standalone means that the UI can be handled without influencing or being influenced by other UI")]
         [SerializeField] private bool standalone;
+        [SerializeField] private bool overrideNavigation;
+        [ShowIf(nameof(overrideNavigation))]
+        [SerializeField] private bool clearSelectionOnMouseMovement;
 
         #endregion
 
 
         #region Properties
 
+        public bool ListenForEscapePress => listenForEscapePress;
         public bool IsSceneObject => isSceneObject;
         public bool HideUnderlyingUI => hideUnderlyingUI;
         public bool HideOnFocusLoss => hideOnFocusLoss;
         public bool WaitForOtherUIToCloseBeforeOpening => waitForOtherUIToCloseBeforeOpening;
+        public bool WaitForCloseBeforeShowingPreviousUI => waitForCloseBeforeShowingPreviousUI;
         public bool StartVisibility => startVisibility;
         public bool AutoSelectFirstObject => autoSelectFirstObject;
+        public bool ForceFirstObjectSelection => forceFirstObjectSelection;
         public Selectable FirstSelected => firstSelected;
         public bool Standalone => standalone;
+        public bool OverrideNavigation => overrideNavigation;
+        public bool ClearSelectionOnMouseMovement => clearSelectionOnMouseMovement;
 
         #endregion
     }

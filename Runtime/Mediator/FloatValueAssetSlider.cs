@@ -1,4 +1,4 @@
-using Baracuda.Mediator.Values;
+using Baracuda.Bedrock.Values;
 using Baracuda.Utilities;
 using System.Globalization;
 using TMPro;

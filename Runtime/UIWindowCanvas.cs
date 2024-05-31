@@ -1,4 +1,7 @@
-﻿using Baracuda.Utilities;
+﻿using Baracuda.Bedrock.Callbacks;
+using Baracuda.Bedrock.Injection;
+using Baracuda.Bedrock.Services;
+using Baracuda.Utilities;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using System;
@@ -12,7 +15,7 @@ namespace Baracuda.UI
     [RequireComponent(typeof(Canvas))]
     [RequireComponent(typeof(CanvasGroup))]
     [RequireComponent(typeof(UIScaleController))]
-    public abstract class UIComponentIMGUI : UIComponent
+    public abstract class UIWindowCanvas : UIWindow
     {
         [HideInInspector]
         [SerializeField] private Canvas canvas;
@@ -38,9 +41,10 @@ namespace Baracuda.UI
         ///     Called on the component to play custom opening or fade in effects.
         /// </summary>
         /// <param name="isFocusRegain"></param>
-        protected override Sequence ShowAsync(bool isFocusRegain)
+        protected internal override Sequence ShowAsync(bool isFocusRegain)
         {
             this.DOKill();
+            this.SetActive(true);
             var sequence = DOTween.Sequence(this);
             sequence.Append(CanvasGroup.DOFade(1, .3f));
             return sequence;
@@ -50,7 +54,7 @@ namespace Baracuda.UI
         ///     Called on the component to play custom closing or fade out effects.
         /// </summary>
         /// <param name="isFocusLoss"></param>
-        protected override Sequence HideAsync(bool isFocusLoss)
+        protected internal override Sequence HideAsync(bool isFocusLoss)
         {
             this.DOKill();
             var sequence = DOTween.Sequence(this);
@@ -62,32 +66,37 @@ namespace Baracuda.UI
         protected override void Awake()
         {
             base.Awake();
+            Inject.Dependencies(this, false);
             if (Settings.StartVisibility is false)
             {
                 CanvasGroup.alpha = 0;
-                IsVisible = false;
             }
         }
 
         protected override void OnDestroy()
         {
             base.OnDestroy();
-            InputManager.NavigationInputReceived -= _forceSelectObject;
-            InputManager.BecameControllerScheme -= _forceSelectObject;
-            InputManager.BecameDesktopScheme -= _forceDeselectObject;
-            InputManager.SelectionChanged -= _cacheSelection;
+            if (Gameloop.IsQuitting)
+            {
+                return;
+            }
+            var inputManager = ServiceLocator.Get<InputManager>();
+            inputManager.NavigationInputReceived -= _forceSelectObject;
+            inputManager.BecameControllerScheme -= _forceSelectObject;
+            inputManager.BecameDesktopScheme -= _forceDeselectObject;
+            inputManager.SelectionChanged -= _cacheSelection;
         }
 
-#if UNITY_EDITOR
         protected override void OnValidate()
         {
+#if UNITY_EDITOR
             base.OnValidate();
             canvas ??= GetComponent<Canvas>();
             canvasGroup ??= GetComponent<CanvasGroup>();
             buttons = GetComponentsInChildren<Button>(true);
             selectables = GetComponentsInChildren<Selectable>(true);
-        }
 #endif
+        }
 
         protected void DisableSelectables()
         {
@@ -119,56 +128,58 @@ namespace Baracuda.UI
             }
         }
 
-        protected sealed override void GainFocus()
+        protected internal override void GainFocus()
         {
-            if (Settings.Standalone)
-            {
-                return;
-            }
-            OnGainFocus();
+            var inputManager = ServiceLocator.Get<InputManager>();
 
             if (Settings.HideOnFocusLoss)
             {
                 ShowAsync(true);
             }
-            UIManager.ReturnConsumerStack.PushUnique(this);
+            if (Settings.ListenForEscapePress)
+            {
+                inputManager.AddEscapeConsumer(OnEscapePressed);
+            }
 
             _forceSelectObject ??= ForceSelectObject;
             _forceDeselectObject ??= ForceDeselectObject;
             _cacheSelection ??= CacheSelection;
 
-            InputManager.NavigationInputReceived += _forceSelectObject;
-            InputManager.BecameControllerScheme += _forceSelectObject;
-            InputManager.BecameDesktopScheme += _forceDeselectObject;
-            InputManager.SelectionChanged += _cacheSelection;
+            EnableSelectables();
+            inputManager.NavigationInputReceived += _forceSelectObject;
+            inputManager.BecameControllerScheme += _forceSelectObject;
+            inputManager.BecameDesktopScheme += _forceDeselectObject;
+            inputManager.SelectionChanged += _cacheSelection;
 
-            if (InputManager.IsGamepadScheme || InputManager.InteractionMode == InteractionMode.NavigationInput)
+            if (inputManager.IsGamepadScheme ||
+                inputManager.InteractionMode == InteractionMode.NavigationInput ||
+                Settings.ForceFirstObjectSelection)
             {
                 ForceSelectObject();
             }
         }
 
-        protected sealed override void LoseFocus()
+        protected internal override void LoseFocus()
         {
-            if (Settings.Standalone)
+            var inputManager = ServiceLocator.Get<InputManager>();
+            if (Settings.ListenForEscapePress)
             {
-                return;
+                inputManager.RemoveEscapeConsumer(OnEscapePressed);
             }
-            UIManager.ReturnConsumerStack.Remove(this);
 
             if (Settings.HideOnFocusLoss)
             {
                 HideAsync(true);
             }
 
-            InputManager.NavigationInputReceived -= _forceSelectObject;
-            InputManager.BecameControllerScheme -= _forceSelectObject;
-            InputManager.BecameDesktopScheme -= _forceDeselectObject;
-            InputManager.SelectionChanged -= _cacheSelection;
+            DisableSelectables();
 
-            _lastSelected = EventSystem.current.currentSelectedGameObject;
+            inputManager.NavigationInputReceived -= _forceSelectObject;
+            inputManager.BecameControllerScheme -= _forceSelectObject;
+            inputManager.BecameDesktopScheme -= _forceDeselectObject;
+            inputManager.SelectionChanged -= _cacheSelection;
+
             EventSystem.current.SetSelectedGameObject(null);
-            OnLoseFocus();
         }
 
         private void ForceSelectObject()
@@ -200,13 +211,13 @@ namespace Baracuda.UI
             }
         }
 
-        private GameObject GetObjectToSelect()
+        public GameObject GetObjectToSelect(bool ignoreActiveState = false)
         {
+            var inputManager = ServiceLocator.Get<InputManager>();
             // Check if the currently selected object is already viable.
-
-            if (InputManager.HasSelectable && InputManager.Selected.IsActiveInHierarchy())
+            if (inputManager.HasSelectable && inputManager.Selected.IsActiveInHierarchy())
             {
-                var selectedObject = InputManager.Selected;
+                var selectedObject = inputManager.Selected;
                 if (selectedObject.interactable && Selectables.Contains(selectedObject))
                 {
                     return selectedObject.gameObject;
@@ -214,13 +225,13 @@ namespace Baracuda.UI
             }
 
             // Check if the last selected object is viable.
-            var lastSelectedIsViable = _lastSelected && _lastSelected.activeInHierarchy;
+            var lastSelectedIsViable = _lastSelected != null && (ignoreActiveState || _lastSelected.activeInHierarchy);
             if (lastSelectedIsViable)
             {
                 return _lastSelected;
             }
 
-            // Get a predetermined first selection object.
+            // GetIfLoaded a predetermined first selection object.
             if (Settings.AutoSelectFirstObject && Settings.FirstSelected)
             {
                 return Settings.FirstSelected.gameObject;

@@ -1,8 +1,16 @@
-﻿using Baracuda.Mediator.Cursor;
-using Baracuda.Mediator.Events;
-using Baracuda.Mediator.Services;
+﻿using Baracuda.Bedrock.Cursor;
+using Baracuda.Bedrock.Events;
+using Baracuda.Bedrock.Locks;
+using Baracuda.Bedrock.Odin;
+using Baracuda.Bedrock.Services;
+using Baracuda.Utilities.Collections;
+using Baracuda.Utilities.Types;
+using Cysharp.Threading.Tasks;
+using Sirenix.OdinInspector;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -12,85 +20,232 @@ using UnityEngine.UI;
 namespace Baracuda.UI
 {
     [RequireComponent(typeof(PlayerInput))]
-    public class InputManager : MonoBehaviour, IHideCursor
+    public class InputManager : MonoBehaviour
     {
-        [SerializeField] private PlayerInput playerInput;
-        [SerializeField] private InputActionReference navigateInputAction;
-        [SerializeField] private InputActionReference[] mouseInputActions;
+        #region Fields
+
+        [SerializeField] [Required] private PlayerInput playerInput;
+        [SerializeField] [Required] private InputActionAsset inputActionAsset;
+        [SerializeField] [Required] private InputActionReference navigateInputAction;
+        [SerializeField] [Required] private InputActionReference escapeInputAction;
+        [SerializeField] [Required] private InputActionReference[] mouseInputActions;
 
         [Header("Schemes")]
         [SerializeField] private string[] controllerSchemes;
-        [SerializeField] private HideCursorLocks cursorHide;
+
+        private readonly Lock _escapeInputBlocker = new();
+        private readonly StackList<Func<EscapeUsage>> _escapeConsumerStack = new();
+        private readonly List<Action> _escapeListener = new();
+
+        [ReadonlyInspector]
+        private List<object> EscapeConsumer => _escapeConsumerStack.Select(item => item.Target).ToList();
+
+        #endregion
+
+
+        #region Properties
 
         public PlayerInput PlayerInput => playerInput;
+        public bool IsGamepadScheme { get; private set; }
+        public bool IsDesktopScheme => !IsGamepadScheme;
+        public InteractionMode InteractionMode { get; private set; }
+        public bool EnableNavigationEvents { get; set; } = true;
+        public bool HasSelectable => Selected != null;
+        public Selectable Selected { get; private set; }
+        public Selectable LastSelected { get; private set; }
 
-        public static bool IsGamepadScheme { get; private set; }
-        public static InteractionMode InteractionMode { get; private set; }
+        #endregion
 
-        public static bool EnableNavigationEvents { get; set; } = true;
 
-        public static event Action BecameControllerScheme
+        #region Events
+
+        public event Action BecameControllerScheme
         {
-            add => onBecameControllerScheme.Add(value);
-            remove => onBecameControllerScheme.Remove(value);
+            add => _onBecameControllerScheme.Add(value);
+            remove => _onBecameControllerScheme.Remove(value);
         }
 
-        public static event Action BecameDesktopScheme
+        public event Action BecameDesktopScheme
         {
-            add => onBecameDesktopScheme.Add(value);
-            remove => onBecameDesktopScheme.Remove(value);
+            add => _onBecameDesktopScheme.Add(value);
+            remove => _onBecameDesktopScheme.Remove(value);
         }
 
-        public static event Action NavigationInputReceived
+        public event Action NavigationInputReceived
         {
-            add => onNavigationInputReceived.Add(value);
-            remove => onNavigationInputReceived.Remove(value);
+            add => _onNavigationInputReceived.Add(value);
+            remove => _onNavigationInputReceived.Remove(value);
         }
 
-        public static event Action MouseInputReceived
+        public event Action MouseInputReceived
         {
-            add => onMouseInputReceived.Add(value);
-            remove => onMouseInputReceived.Remove(value);
+            add => _onMouseInputReceived.Add(value);
+            remove => _onMouseInputReceived.Remove(value);
         }
 
-        public static bool HasSelectable => Selected != null;
-        public static Selectable Selected { get; private set; }
-
-        public static event Action<Selectable> SelectionChanged
+        public event Action<Selectable> SelectionChanged
         {
-            add => onSelectionChanged.Add(value);
-            remove => onSelectionChanged.Remove(value);
+            add => _onSelectionChanged.Add(value);
+            remove => _onSelectionChanged.Remove(value);
         }
 
-        public static event Action SelectionCleared
+        public event Action SelectionCleared
         {
-            add => onSelectionCleared.Add(value);
-            remove => onSelectionCleared.Remove(value);
+            add => _onSelectionCleared.Add(value);
+            remove => _onSelectionCleared.Remove(value);
         }
 
-        private static readonly Broadcast onBecameControllerScheme = new();
-        private static readonly Broadcast onBecameDesktopScheme = new();
-        private static readonly Broadcast onNavigationInputReceived = new();
-        private static readonly Broadcast onMouseInputReceived = new();
+        #endregion
 
-        private static readonly Broadcast<Selectable> onSelectionChanged = new();
-        private static readonly Broadcast onSelectionCleared = new();
+
+        #region Fields
+
+        private readonly Broadcast _onBecameControllerScheme = new();
+        private readonly Broadcast _onBecameDesktopScheme = new();
+        private readonly Broadcast _onNavigationInputReceived = new();
+        private readonly Broadcast _onMouseInputReceived = new();
+
+        private readonly Broadcast<Selectable> _onSelectionChanged = new();
+        private readonly Broadcast _onSelectionCleared = new();
 
         private GameObject _lastEventSystemSelection;
+
+        [ReadonlyInspector]
+        private readonly Dictionary<InputActionMapReference, HashSet<object>> _inputActionMapProvider = new();
+
+        #endregion
+
+
+        #region Input Map Provider
+
+        public void EnableActionMap(InputActionMapReference actionMapReference, object provider)
+        {
+            if (!_inputActionMapProvider.TryGetValue(actionMapReference, out var hashSet))
+            {
+                hashSet = new HashSet<object>();
+                _inputActionMapProvider.Add(actionMapReference, hashSet);
+            }
+
+            hashSet.Add(provider);
+        }
+
+        public void DisableActionMap(InputActionMapReference actionMapReference, object provider)
+        {
+            if (!_inputActionMapProvider.TryGetValue(actionMapReference, out var hashSet))
+            {
+                hashSet = new HashSet<object>();
+                _inputActionMapProvider.Add(actionMapReference, hashSet);
+            }
+
+            hashSet.Remove(provider);
+        }
+
+        private void UpdateInputActionMaps()
+        {
+            inputActionAsset.Enable();
+
+            foreach (var (inputActionMapName, hashSet) in _inputActionMapProvider.Reverse())
+            {
+                var actionMap = inputActionAsset.FindActionMap(inputActionMapName, true);
+                var desiredState = hashSet.Any();
+
+                if (desiredState == actionMap.enabled)
+                {
+                    continue;
+                }
+
+                if (desiredState)
+                {
+                    actionMap.Enable();
+                }
+                else
+                {
+                    actionMap.Disable();
+                }
+            }
+        }
+
+        #endregion
+
+
+        #region EscapeUsage Listener
+
+        public void AddEscapeConsumer(Func<EscapeUsage> listener)
+        {
+            _escapeConsumerStack.PushUnique(listener);
+        }
+
+        public void RemoveEscapeConsumer(Func<EscapeUsage> listener)
+        {
+            _escapeConsumerStack.Remove(listener);
+        }
+
+        public void AddDiscreteEscapeListener(Action listener)
+        {
+            _escapeListener.Add(listener);
+        }
+
+        public void RemoveDiscreteEscapeListener(Action listener)
+        {
+            _escapeListener.Remove(listener);
+        }
+
+        public void BlockEscapeInput(object blocker)
+        {
+            _escapeInputBlocker.Add(blocker);
+        }
+
+        public async void UnlockEscapeInput(object blocker)
+        {
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
+            _escapeInputBlocker.Remove(blocker);
+        }
+
+        private void OnEscapePressed(InputAction.CallbackContext context)
+        {
+            if (_escapeInputBlocker.HasAny())
+            {
+                return;
+            }
+
+            foreach (var action in _escapeListener)
+            {
+                action();
+            }
+
+            foreach (var consumer in _escapeConsumerStack.Reverse())
+            {
+                if (consumer() is EscapeUsage.ConsumedEscape)
+                {
+                    break;
+                }
+            }
+        }
+
+        #endregion
+
+
+        #region Setup & Shutdown
 
         private void Awake()
         {
             playerInput.onControlsChanged += OnControlsChanged;
             navigateInputAction.action.performed += OnNavigationInput;
+            inputActionAsset.Enable();
+            foreach (var inputActionMap in inputActionAsset.actionMaps)
+            {
+                inputActionMap.Disable();
+            }
             foreach (var inputActionReference in mouseInputActions)
             {
                 inputActionReference.action.performed += OnMouseInput;
             }
+            escapeInputAction.action.performed += OnEscapePressed;
         }
 
         private void Start()
         {
-            playerInput.uiInputModule = ServiceLocator.Global.Get<InputSystemUIInputModule>();
+            playerInput.uiInputModule = ServiceLocator.Get<InputSystemUIInputModule>();
         }
 
         private void OnDestroy()
@@ -101,19 +256,47 @@ namespace Baracuda.UI
             {
                 inputActionReference.action.performed -= OnMouseInput;
             }
+            escapeInputAction.action.performed -= OnEscapePressed;
+            LastSelected = Selected is SelectionRouter ? LastSelected : Selected;
             Selected = null;
             IsGamepadScheme = false;
-            onBecameControllerScheme.Clear();
-            onBecameDesktopScheme.Clear();
-            onNavigationInputReceived.Clear();
-            onMouseInputReceived.Clear();
-            onSelectionChanged.Clear();
-            onSelectionCleared.Clear();
+            _onBecameControllerScheme.Clear();
+            _onBecameDesktopScheme.Clear();
+            _onNavigationInputReceived.Clear();
+            _onMouseInputReceived.Clear();
+            _onSelectionChanged.Clear();
+            _onSelectionCleared.Clear();
         }
 
-        private void Update()
+        private void LateUpdate()
         {
             UpdateEventSystemState();
+            UpdateInputActionMaps();
+        }
+
+        #endregion
+
+
+        #region Selection
+
+        public void Select(GameObject gameObjectToSelect)
+        {
+            EventSystem.current.SetSelectedGameObject(gameObjectToSelect);
+        }
+
+        public void Select(Selectable selectable)
+        {
+            EventSystem.current.SetSelectedGameObject(selectable.gameObject);
+        }
+
+        public bool IsSelectionContext(Component component)
+        {
+            if (HasSelectable is false)
+            {
+                return false;
+            }
+
+            return Selected.GetComponents<Component>().Any(item => item == component);
         }
 
         private void OnControlsChanged(PlayerInput input)
@@ -126,15 +309,16 @@ namespace Baracuda.UI
                 return;
             }
 
+            var cursorManager = ServiceLocator.Get<CursorManager>();
             if (IsGamepadScheme)
             {
-                onBecameControllerScheme.Raise();
-                cursorHide.Add(this);
+                _onBecameControllerScheme.Raise();
+                cursorManager.AddCursorVisibilityBlocker(this);
             }
             else
             {
-                onBecameDesktopScheme.Raise();
-                cursorHide.Remove(this);
+                _onBecameDesktopScheme.Raise();
+                cursorManager.RemoveCursorVisibilityBlocker(this);
             }
         }
 
@@ -143,7 +327,7 @@ namespace Baracuda.UI
             InteractionMode = InteractionMode.NavigationInput;
             if (EnableNavigationEvents)
             {
-                onNavigationInputReceived.Raise();
+                _onNavigationInputReceived.Raise();
             }
         }
 
@@ -152,7 +336,8 @@ namespace Baracuda.UI
             InteractionMode = InteractionMode.Mouse;
             if (EnableNavigationEvents)
             {
-                onMouseInputReceived.Raise();
+                _onMouseInputReceived.Raise();
+                OnMouseMovementInternal();
             }
         }
 
@@ -171,18 +356,46 @@ namespace Baracuda.UI
 
             if (selectedObject == null)
             {
-                onSelectionCleared.Raise();
+                _onSelectionCleared.Raise();
+                LastSelected = Selected is SelectionRouter ? LastSelected : Selected;
                 Selected = null;
                 _lastEventSystemSelection = null;
                 return;
             }
 
+            LastSelected = Selected is SelectionRouter ? LastSelected : Selected;
             Selected = selectedObject.GetComponent<Selectable>();
             if (HasSelectable)
             {
-                onSelectionChanged.Raise(Selected);
+                _onSelectionChanged.Raise(Selected);
             }
             _lastEventSystemSelection = selectedObject;
         }
+
+        #endregion
+
+
+        #region Navigation
+
+        public ValueStack<bool> ClearSelectionOnMouseMovement { get; } = new();
+        public ValueStack<bool> KeepInputFieldsSelected { get; } = new();
+
+        private void OnMouseMovementInternal()
+        {
+            if (ClearSelectionOnMouseMovement && HasSelectable)
+            {
+                if (KeepInputFieldsSelected.Value && Selected is TMP_InputField)
+                {
+                    return;
+                }
+                if (Selected is HoldButton {IsHoldInProgress: true})
+                {
+                    return;
+                }
+                EventSystem.current.SetSelectedGameObject(null);
+            }
+        }
+
+        #endregion
     }
 }

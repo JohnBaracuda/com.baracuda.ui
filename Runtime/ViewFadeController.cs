@@ -1,4 +1,4 @@
-using Baracuda.Mediator.Values;
+using Baracuda.Bedrock.Values;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;

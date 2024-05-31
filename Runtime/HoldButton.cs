@@ -1,4 +1,5 @@
-﻿using Baracuda.Mediator.Events;
+﻿using Baracuda.Bedrock.Events;
+using Baracuda.Bedrock.Services;
 using Baracuda.Utilities;
 using System;
 using UnityEngine;
@@ -23,7 +24,6 @@ namespace Baracuda.UI
         private readonly Broadcast<float> _onHoldProgress = new();
 
         private bool _isHolding;
-        private bool _holdCompleted;
         private float _holdProgress;
         private float _holdTime;
 
@@ -61,6 +61,19 @@ namespace Baracuda.UI
         #endregion
 
 
+        #region Setup & Shutdown
+
+        public void ClearCallbacks()
+        {
+            _onHoldStarted.Clear();
+            _onHoldCompleted.Clear();
+            _onHoldCancelled.Clear();
+            _onHoldProgress.Clear();
+        }
+
+        #endregion
+
+
         #region Pointer Callbacks
 
         public void OnPointerClick(PointerEventData eventData)
@@ -69,7 +82,8 @@ namespace Baracuda.UI
             {
                 return;
             }
-            if (InputManager.IsGamepadScheme is false)
+            var inputManager = ServiceLocator.Get<InputManager>();
+            if (inputManager.IsGamepadScheme is false)
             {
                 return;
             }
@@ -135,13 +149,9 @@ namespace Baracuda.UI
             {
                 return;
             }
-            if (_holdCompleted is false)
-            {
-                IsHoldInProgress = false;
-                _onHoldCancelled.Raise();
-            }
+            IsHoldInProgress = false;
+            _onHoldCancelled.Raise();
             _isHolding = false;
-            _holdCompleted = false;
             _holdTime = 0;
         }
 
@@ -159,10 +169,11 @@ namespace Baracuda.UI
             var holdDelta = clampedHoldTime / holdDuration;
             _onHoldProgress.Raise(holdDelta);
 
-            var holdCompletedThisFrame = holdDelta >= 1 && _holdCompleted is false;
+            var holdCompletedThisFrame = holdDelta >= 1;
             if (holdCompletedThisFrame)
             {
-                _holdCompleted = true;
+                _isHolding = false;
+                _holdTime = 0;
                 IsHoldInProgress = false;
                 _onHoldCompleted.Raise();
             }

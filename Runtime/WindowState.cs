@@ -1,6 +1,6 @@
 ﻿namespace Baracuda.UI
 {
-    public enum ViewState
+    public enum WindowState
     {
         None = 0,
         Open = 1,
