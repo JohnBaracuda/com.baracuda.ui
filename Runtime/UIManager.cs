@@ -1,5 +1,6 @@
 ﻿using Baracuda.Bedrock.Events;
 using Baracuda.Bedrock.Injection;
+using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.Locks;
 using Baracuda.Bedrock.Odin;
 using Baracuda.Utilities;
@@ -213,6 +214,7 @@ namespace Baracuda.UI
 
         [Inject] [Debug] private readonly UISettings _settings;
         [Inject] [Debug] private readonly InputManager _inputManager;
+        [Inject] [Debug] private readonly SelectionManager _selectionManager;
 
         private Sequence _sequence;
 
@@ -313,7 +315,7 @@ namespace Baracuda.UI
             {
                 // this could also be performed by UI in on open callbacks.
                 var clearSelectionOnMouseMovement = settings.ClearSelectionOnMouseMovement;
-                _inputManager.ClearSelectionOnMouseMovement.Add(clearSelectionOnMouseMovement, window);
+                _selectionManager.ClearSelectionOnMouseMovement.Add(clearSelectionOnMouseMovement, window);
             }
 
             _sequence = DOTween.Sequence();
@@ -417,7 +419,7 @@ namespace Baracuda.UI
             if (settings.OverrideNavigation)
             {
                 // this could also be performed by UI in on open callbacks.
-                _inputManager.ClearSelectionOnMouseMovement.Remove(window);
+                _selectionManager.ClearSelectionOnMouseMovement.Remove(window);
             }
 
             var isActiveWindow = _stack.TryPeek(out var activeWindow) && activeWindow == window;

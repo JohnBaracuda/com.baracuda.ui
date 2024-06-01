@@ -1,4 +1,5 @@
-﻿using Baracuda.Bedrock.Services;
+﻿using Baracuda.Bedrock.Input;
+using Baracuda.Bedrock.Services;
 using UnityEngine;
 using UnityEngine.UIElements;
 

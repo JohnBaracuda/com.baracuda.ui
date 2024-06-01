@@ -1,4 +1,5 @@
 ﻿using Baracuda.Bedrock.Events;
+using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.Services;
 using Baracuda.Utilities;
 using System;

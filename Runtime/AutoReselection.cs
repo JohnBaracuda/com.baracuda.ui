@@ -35,8 +35,8 @@ namespace Baracuda.UI
             if (_isSelected && autoSelectLastObjectOnDisable)
             {
                 _isSelected = false;
-                var inputManager = ServiceLocator.Get<InputManager>();
-                inputManager.Select(inputManager.LastSelected);
+                var selectionManager = ServiceLocator.Get<SelectionManager>();
+                selectionManager.Select(selectionManager.LastSelected);
             }
         }
     }

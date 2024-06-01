@@ -1,4 +1,5 @@
 ﻿using Baracuda.Bedrock.Injection;
+using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.Bedrock.Services;
 using Baracuda.Utilities;
@@ -84,7 +85,8 @@ namespace Baracuda.UI
             inputManager.NavigationInputReceived -= _forceSelectObject;
             inputManager.BecameControllerScheme -= _forceSelectObject;
             inputManager.BecameDesktopScheme -= _forceDeselectObject;
-            inputManager.SelectionChanged -= _cacheSelection;
+            var selectionManager = ServiceLocator.Get<SelectionManager>();
+            selectionManager.SelectionChanged -= _cacheSelection;
         }
 
         protected override void OnValidate()
@@ -149,7 +151,9 @@ namespace Baracuda.UI
             inputManager.NavigationInputReceived += _forceSelectObject;
             inputManager.BecameControllerScheme += _forceSelectObject;
             inputManager.BecameDesktopScheme += _forceDeselectObject;
-            inputManager.SelectionChanged += _cacheSelection;
+
+            var selectionManager = ServiceLocator.Get<SelectionManager>();
+            selectionManager.SelectionChanged += _cacheSelection;
 
             if (inputManager.IsGamepadScheme ||
                 inputManager.InteractionMode == InteractionMode.NavigationInput ||
@@ -177,7 +181,9 @@ namespace Baracuda.UI
             inputManager.NavigationInputReceived -= _forceSelectObject;
             inputManager.BecameControllerScheme -= _forceSelectObject;
             inputManager.BecameDesktopScheme -= _forceDeselectObject;
-            inputManager.SelectionChanged -= _cacheSelection;
+
+            var selectionManager = ServiceLocator.Get<SelectionManager>();
+            selectionManager.SelectionChanged -= _cacheSelection;
 
             EventSystem.current.SetSelectedGameObject(null);
         }
@@ -214,10 +220,11 @@ namespace Baracuda.UI
         public GameObject GetObjectToSelect(bool ignoreActiveState = false)
         {
             var inputManager = ServiceLocator.Get<InputManager>();
+            var selectionManager = ServiceLocator.Get<SelectionManager>();
             // Check if the currently selected object is already viable.
-            if (inputManager.HasSelectable && inputManager.Selected.IsActiveInHierarchy())
+            if (selectionManager.HasSelectable && selectionManager.Selected.IsActiveInHierarchy())
             {
-                var selectedObject = inputManager.Selected;
+                var selectedObject = selectionManager.Selected;
                 if (selectedObject.interactable && Selectables.Contains(selectedObject))
                 {
                     return selectedObject.gameObject;

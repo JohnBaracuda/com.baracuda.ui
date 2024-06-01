@@ -1,4 +1,5 @@
-﻿using Baracuda.Bedrock.Services;
+﻿using Baracuda.Bedrock.Input;
+using Baracuda.Bedrock.Services;
 using Baracuda.UI.Mediator;
 using Baracuda.Utilities;
 using Baracuda.Utilities.Types;

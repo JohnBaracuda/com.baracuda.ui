@@ -17,7 +17,7 @@ namespace Baracuda.UI
         {
             base.OnSelect(eventData);
             await UniTask.Yield(PlayerLoopTiming.PostLateUpdate);
-            var lastSelection = ServiceLocator.Get<InputManager>().LastSelected;
+            var lastSelection = ServiceLocator.Get<SelectionManager>().LastSelected;
             var nextSelection = targets
                 .FirstOrDefault(target => target.IsActiveInHierarchy() && target != lastSelection)?.gameObject;
             EventSystem.current.SetSelectedGameObject(nextSelection);
