@@ -17,7 +17,7 @@ namespace Baracuda.UI
             return DOTween.To(() => target.characterSpacing, x => target.characterSpacing = x, endValue, duration);
         }
 
-        public static void DOKillRuntime(this Component target)
+        public static void ShutdownTweens(this Component target)
         {
 #if UNITY_EDITOR
             if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode is false)

@@ -20,6 +20,7 @@ namespace Baracuda.UI
             var lastSelection = ServiceLocator.Get<SelectionManager>().LastSelected;
             var nextSelection = targets
                 .FirstOrDefault(target => target.IsActiveInHierarchy() && target != lastSelection)?.gameObject;
+            Debug.LogMember();
             EventSystem.current.SetSelectedGameObject(nextSelection);
         }
 

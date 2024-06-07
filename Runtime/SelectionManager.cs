@@ -81,7 +81,7 @@ namespace Baracuda.UI
         [PublicAPI]
         public void Select(Selectable selectable)
         {
-            Select(selectable.gameObject);
+            Select(selectable?.gameObject);
         }
 
         [PublicAPI]
@@ -148,7 +148,8 @@ namespace Baracuda.UI
                 {
                     return;
                 }
-                EventSystem.current.SetSelectedGameObject(null);
+
+                Select(default(Selectable));
             }
         }
 

@@ -219,13 +219,12 @@ namespace Baracuda.UI
 
         public GameObject GetObjectToSelect(bool ignoreActiveState = false)
         {
-            var inputManager = ServiceLocator.Get<InputManager>();
             var selectionManager = ServiceLocator.Get<SelectionManager>();
             // Check if the currently selected object is already viable.
             if (selectionManager.HasSelectable && selectionManager.Selected.IsActiveInHierarchy())
             {
                 var selectedObject = selectionManager.Selected;
-                if (selectedObject.interactable && Selectables.Contains(selectedObject))
+                if (selectedObject.interactable)
                 {
                     return selectedObject.gameObject;
                 }

@@ -149,7 +149,7 @@ namespace Baracuda.UI
 
         private void OnDestroy()
         {
-            this.DOKillRuntime();
+            this.ShutdownTweens();
         }
 
         #endregion
