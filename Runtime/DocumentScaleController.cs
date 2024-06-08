@@ -1,4 +1,4 @@
-﻿using Baracuda.Mediator;
+﻿using Baracuda.Bedrock.Mediator;
 using Baracuda.Utilities;
 using Sirenix.OdinInspector;
 using UnityEngine;

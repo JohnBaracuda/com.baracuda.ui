@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace Baracuda.UI
 {
-    public class PlayerInputValueAsset : ValueAsset<UnityEngine.InputSystem.PlayerInput>
+    public class PlayerInputValueAsset : Baracuda.Bedrock.Values.ValueAsset<UnityEngine.InputSystem.PlayerInput>
     {
     }
 }

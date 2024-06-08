@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 
 namespace Baracuda.UI
 {
-    public class EventSystemValueAsset : ValueAsset<UnityEngine.EventSystems.EventSystem>
+    public class EventSystemValueAsset : Baracuda.Bedrock.Values.ValueAsset<UnityEngine.EventSystems.EventSystem>
     {
     }
 }
