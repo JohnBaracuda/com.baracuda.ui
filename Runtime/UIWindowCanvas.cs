@@ -15,7 +15,7 @@ namespace Baracuda.UI
 {
     [RequireComponent(typeof(Canvas))]
     [RequireComponent(typeof(CanvasGroup))]
-    [RequireComponent(typeof(UIScaleController))]
+    [RequireComponent(typeof(CanvasScaleController))]
     public abstract class UIWindowCanvas : UIWindow
     {
         [HideInInspector]

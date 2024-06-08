@@ -52,7 +52,7 @@ namespace Baracuda.UI
 
         private void OnScroll(float value)
         {
-            _lastScrollTimer = UnscaledTimer.Run(1);
+            _lastScrollTimer = UnscaledTimer.FromSeconds(1);
         }
 
         public void OnSelect(BaseEventData eventData)

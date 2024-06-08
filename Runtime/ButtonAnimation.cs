@@ -83,6 +83,8 @@ namespace Baracuda.UI
         public bool IsLocked { get; private set; }
         public event Action Selected;
         public event Action Deselected;
+        public event Action Hovered;
+        public event Action Unhovered;
         public Button Button => targetButton;
 
         #endregion
@@ -189,27 +191,29 @@ namespace Baracuda.UI
 
         public void OnPointerEnter(PointerEventData eventData)
         {
+            Hovered?.Invoke();
             IsHovered = true;
             UpdateRepresentation();
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
+            Unhovered?.Invoke();
             IsHovered = false;
             UpdateRepresentation();
         }
 
         private void UpdateRepresentation()
         {
-            if (IsLocked)
-            {
-                FadeToLocked();
-                return;
-            }
-
             if (IsSelected)
             {
                 FadeToSelected();
+                return;
+            }
+
+            if (IsLocked)
+            {
+                FadeToLocked();
                 return;
             }
 

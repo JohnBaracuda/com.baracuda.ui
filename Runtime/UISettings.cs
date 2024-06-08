@@ -1,11 +1,11 @@
-﻿using Baracuda.Bedrock.Settings;
+﻿using Baracuda.Bedrock.Assets;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Baracuda.UI
 {
-    public class UISettings : SettingsAsset
+    public class UISettings : ScriptableAsset
     {
         [SerializeField] [Required] private InputActionReference returnInput;
 
