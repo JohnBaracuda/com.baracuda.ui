@@ -2,7 +2,7 @@
 
 namespace Baracuda.UI
 {
-    public class DropdownEntry
+    public class SelectionEntry
     {
         public int Index;
         public int EnumValue;

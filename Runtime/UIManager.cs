@@ -1,4 +1,7 @@
-﻿using Baracuda.Bedrock.Events;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Baracuda.Bedrock.Events;
 using Baracuda.Bedrock.Injection;
 using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.Locks;
@@ -8,9 +11,6 @@ using Baracuda.Utilities.Collections;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using JetBrains.Annotations;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace Baracuda.UI
@@ -138,7 +138,7 @@ namespace Baracuda.UI
         [PublicAPI]
         public void Unload<T>() where T : UIWindow
         {
-            Container.Unload<T>();
+            Container?.Unload<T>();
         }
 
         /// <summary>
@@ -148,6 +148,15 @@ namespace Baracuda.UI
         public void Open<T>(T instance = null) where T : UIWindow
         {
             OpenInternal(instance).Forget();
+        }
+
+        /// <summary>
+        ///     Opens the specified UI window once active transitions have been completed.
+        /// </summary>
+        [PublicAPI]
+        public void OpenScheduled<T>(T instance = null) where T : UIWindow
+        {
+            OpenScheduledInternal<T>();
         }
 
         /// <summary>
@@ -195,6 +204,15 @@ namespace Baracuda.UI
             await CloseInternal(instance);
         }
 
+        /// <summary>
+        ///     Force the current transition to complete.
+        /// </summary>
+        [PublicAPI]
+        public void ForceCompleteCurrentTransition()
+        {
+            _sequence?.Complete(true);
+        }
+
         #endregion
 
 
@@ -211,6 +229,7 @@ namespace Baracuda.UI
         private readonly Broadcast<UIWindow> _closeSequenceCompleted = new();
         private readonly Broadcast<UIWindow, UIWindow> _transitionStarted = new();
         private readonly Broadcast<UIWindow, UIWindow> _transitionCompleted = new();
+        private readonly Queue<Action> _openQueue = new();
 
         [Inject] [Debug] private readonly UISettings _settings;
         [Inject] [Debug] private readonly InputManager _inputManager;
@@ -269,7 +288,10 @@ namespace Baracuda.UI
             }
         }
 
-        internal void RemoveSceneObject(UIWindow window)
+        /// <summary>
+        ///     Used by Scene Windows and as a general safety to remove destroyed windows from the stack.
+        /// </summary>
+        internal void RemoveWindowFromStack(UIWindow window)
         {
             Container.Remove(window.GetType(), window);
         }
@@ -283,6 +305,20 @@ namespace Baracuda.UI
         {
             OpenInternal(window).Forget();
             _sequence.Complete(true);
+        }
+
+        private void OpenScheduledInternal<T>(T window = null) where T : UIWindow
+        {
+            if (_sequence.IsActive() is false)
+            {
+                OpenInternal(window).Forget();
+                return;
+            }
+            if (window is null)
+            {
+                Preload<T>();
+            }
+            _openQueue.Enqueue(() => { OpenInternal(window).Forget(); });
         }
 
         private async UniTask<T> OpenInternal<T>(T window = null) where T : UIWindow
@@ -329,6 +365,7 @@ namespace Baracuda.UI
                     var hideSequence = priorWindow.HideAsync(true);
                     _sequence.Append(hideSequence);
                 }
+
                 if (priorWindow.Settings.Standalone is false)
                 {
                     priorWindow.LoseFocus();
@@ -346,10 +383,12 @@ namespace Baracuda.UI
                     window.gameObject.SetActive(true);
                     _stack.PushUnique(window);
                 });
+
                 if (window.Settings.Standalone is false)
                 {
                     _sequence.AppendCallback(window.GainFocus);
                 }
+
                 _sequence.Append(showSequence);
             }
             else
@@ -360,6 +399,7 @@ namespace Baracuda.UI
                 {
                     window.GainFocus();
                 }
+
                 _sequence.Join(showSequence);
             }
 
@@ -451,6 +491,7 @@ namespace Baracuda.UI
                 {
                     window.LoseFocus();
                 }
+
                 if (hasNextWindow)
                 {
                     if (settings.HideUnderlyingUI)
@@ -494,6 +535,7 @@ namespace Baracuda.UI
 
         private void CloseAllWindowsImmediateInternal()
         {
+            Debug.Log("Loading Screen", "Close All Imm");
             while (_stack.Any())
             {
                 CloseImmediate(_stack.Peek());
@@ -502,11 +544,20 @@ namespace Baracuda.UI
 
         private async UniTask CloseAllWindowsAsyncInternal()
         {
+            Debug.Log("Loading Screen", "Close All");
             var buffer = new Stack<UIWindow>(_stack);
             _stack.Clear();
             while (buffer.TryPop(out var element))
             {
-                await CloseAsync(element);
+                try
+                {
+                    element.LoseFocus();
+                    await CloseAsync(element);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                }
             }
         }
 
@@ -528,6 +579,24 @@ namespace Baracuda.UI
             if (_stack.TryPeek(out var window))
             {
                 window.GainFocus();
+            }
+        }
+
+        #endregion
+
+
+        #region Queue Handling
+
+        private void LateUpdate()
+        {
+            if (_sequence.IsActive())
+            {
+                return;
+            }
+
+            if (_openQueue.TryDequeue(out var scheduleOpenAction))
+            {
+                scheduleOpenAction();
             }
         }
 

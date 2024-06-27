@@ -1,11 +1,11 @@
-﻿using Baracuda.Bedrock.Events;
+﻿using System;
+using System.Linq;
+using Baracuda.Bedrock.Events;
 using Baracuda.Bedrock.Injection;
 using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.Odin;
 using Baracuda.Utilities.Collections;
 using JetBrains.Annotations;
-using System;
-using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -22,16 +22,16 @@ namespace Baracuda.UI
         private readonly Broadcast<Selectable> _onSelectionChanged = new();
         private readonly Broadcast _onSelectionCleared = new();
 
-        private GameObject _lastEventSystemSelection;
+        [Debug] private GameObject _lastEventSystemSelection;
 
         #endregion
 
 
         #region Events & Properties
 
-        public bool HasSelectable => Selected != null;
-        public Selectable Selected { get; private set; }
-        public Selectable LastSelected { get; private set; }
+        [Debug] public bool HasSelectable => Selected != null;
+        [Debug] public Selectable Selected { get; private set; }
+        [Debug] public Selectable LastSelected { get; private set; }
         public ValueStack<bool> ClearSelectionOnMouseMovement { get; } = new();
         public ValueStack<bool> KeepInputFieldsSelected { get; } = new();
 
@@ -128,6 +128,7 @@ namespace Baracuda.UI
             {
                 _onSelectionChanged.Raise(Selected);
             }
+
             _lastEventSystemSelection = selectedObject;
         }
 
@@ -144,7 +145,8 @@ namespace Baracuda.UI
                 {
                     return;
                 }
-                if (Selected is HoldButton {IsHoldInProgress: true})
+
+                if (Selected is HoldButton { IsHoldInProgress: true })
                 {
                     return;
                 }

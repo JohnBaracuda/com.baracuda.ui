@@ -1,8 +1,8 @@
-﻿using Baracuda.Bedrock.Services;
+﻿using System.Linq;
+using Baracuda.Bedrock.Services;
 using Baracuda.Utilities;
 using Baracuda.Utilities.Pools;
 using Cysharp.Threading.Tasks;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -20,7 +20,7 @@ namespace Baracuda.UI
             var lastSelection = ServiceLocator.Get<SelectionManager>().LastSelected;
             var nextSelection = targets
                 .FirstOrDefault(target => target.IsActiveInHierarchy() && target != lastSelection)?.gameObject;
-            Debug.LogMember();
+
             EventSystem.current.SetSelectedGameObject(nextSelection);
         }
 
@@ -34,6 +34,7 @@ namespace Baracuda.UI
             {
                 stringBuilder.Append($"-({selectable?.name ?? "null"})");
             }
+
             name = StringBuilderPool.BuildAndRelease(stringBuilder);
         }
 #endif

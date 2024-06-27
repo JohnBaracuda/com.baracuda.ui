@@ -3,6 +3,7 @@ using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.Bedrock.Services;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Baracuda.UI
 {
@@ -128,13 +129,21 @@ namespace Baracuda.UI
                 return;
             }
 
+            var uiManager = ServiceLocator.Get<UIManager>();
+            if (State is WindowState.Closing)
+            {
+                uiManager.ForceCompleteCurrentTransition();
+            }
+
             this.DOKill();
 
             if (Settings.IsSceneObject)
             {
-                var uiManager = ServiceLocator.Get<UIManager>();
-                uiManager.RemoveSceneObject(this);
+                Assert.IsNotNull(uiManager, $"uiManager != null in {Debug.MemberName()}:{Debug.LineNumber()}");
+                uiManager.RemoveWindowFromStack(this);
             }
+
+            uiManager.RemoveWindowFromStack(this);
         }
 
         protected virtual void OnValidate()

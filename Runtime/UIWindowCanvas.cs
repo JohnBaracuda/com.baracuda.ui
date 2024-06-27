@@ -1,13 +1,14 @@
-﻿using Baracuda.Bedrock.Injection;
+﻿using System;
+using System.Linq;
+using Baracuda.Bedrock.Injection;
 using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.Bedrock.Services;
 using Baracuda.Utilities;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
-using System;
-using System.Linq;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -60,7 +61,12 @@ namespace Baracuda.UI
             this.DOKill();
             var sequence = DOTween.Sequence(this);
             sequence.Append(CanvasGroup.DOFade(0, .3f));
-            sequence.AppendCallback(() => this.SetActive(false));
+            sequence.AppendCallback(() =>
+            {
+                Assert.IsNotNull(this);
+                this.SetActive(false);
+            });
+
             return sequence;
         }
 
@@ -68,6 +74,7 @@ namespace Baracuda.UI
         {
             base.Awake();
             Inject.Dependencies(this, false);
+
             if (Settings.StartVisibility is false)
             {
                 CanvasGroup.alpha = 0;
@@ -76,11 +83,14 @@ namespace Baracuda.UI
 
         protected override void OnDestroy()
         {
+            this.DOKill();
             base.OnDestroy();
+
             if (Gameloop.IsQuitting)
             {
                 return;
             }
+
             var inputManager = ServiceLocator.Get<InputManager>();
             inputManager.NavigationInputReceived -= _forceSelectObject;
             inputManager.BecameControllerScheme -= _forceSelectObject;
@@ -138,6 +148,7 @@ namespace Baracuda.UI
             {
                 ShowAsync(true);
             }
+
             if (Settings.ListenForEscapePress)
             {
                 inputManager.AddEscapeConsumer(OnEscapePressed);
@@ -166,6 +177,7 @@ namespace Baracuda.UI
         protected internal override void LoseFocus()
         {
             var inputManager = ServiceLocator.Get<InputManager>();
+
             if (Settings.ListenForEscapePress)
             {
                 inputManager.RemoveEscapeConsumer(OnEscapePressed);
@@ -197,6 +209,7 @@ namespace Baracuda.UI
         {
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
             var objectToSelect = GetObjectToSelect();
+
             if (objectToSelect != null)
             {
                 EventSystem.current.SetSelectedGameObject(objectToSelect);
@@ -220,10 +233,12 @@ namespace Baracuda.UI
         public GameObject GetObjectToSelect(bool ignoreActiveState = false)
         {
             var selectionManager = ServiceLocator.Get<SelectionManager>();
+
             // Check if the currently selected object is already viable.
             if (selectionManager.HasSelectable && selectionManager.Selected.IsActiveInHierarchy())
             {
                 var selectedObject = selectionManager.Selected;
+
                 if (selectedObject.interactable)
                 {
                     return selectedObject.gameObject;
@@ -232,6 +247,7 @@ namespace Baracuda.UI
 
             // Check if the last selected object is viable.
             var lastSelectedIsViable = _lastSelected != null && (ignoreActiveState || _lastSelected.activeInHierarchy);
+
             if (lastSelectedIsViable)
             {
                 return _lastSelected;

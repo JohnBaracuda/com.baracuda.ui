@@ -1,8 +1,8 @@
-﻿using Baracuda.Bedrock.PlayerLoop;
+﻿using System;
+using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.Utilities.Types;
 using DG.Tweening;
 using Sirenix.OdinInspector;
-using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -110,10 +110,12 @@ namespace Baracuda.UI
             {
                 backgroundImage.color = backgroundColorNormal;
             }
+
             if (borderImage)
             {
                 borderImage.color = borderColorNormal;
             }
+
             if (textField)
             {
                 normalFont ??= textField.font;
@@ -130,6 +132,7 @@ namespace Baracuda.UI
             {
                 return;
             }
+
             IsLocked = false;
             IsSelected = false;
             IsHovered = false;
@@ -231,7 +234,7 @@ namespace Baracuda.UI
             textField.font = normalFont;
             noiseAnimation.SetAnimationColor(animationColorNormal);
             noiseAnimation.Stop();
-            this.DOKill();
+            this.ShutdownTweens();
 
             var sequence = DOTween.Sequence(this);
 
@@ -248,9 +251,10 @@ namespace Baracuda.UI
             {
                 textField.font = selectedFont.Value;
             }
+
             noiseAnimation.SetAnimationColor(animationColorSelected);
             noiseAnimation.Play();
-            this.DOKill();
+            this.ShutdownTweens();
 
             var sequence = DOTween.Sequence(this);
 
@@ -267,9 +271,10 @@ namespace Baracuda.UI
             {
                 textField.font = hoverFont.Value;
             }
+
             noiseAnimation.SetAnimationColor(animationColorHover);
             noiseAnimation.Play();
-            this.DOKill();
+            this.ShutdownTweens();
 
             var sequence = DOTween.Sequence(this);
 
@@ -286,9 +291,10 @@ namespace Baracuda.UI
             {
                 textField.font = lockedFont.Value;
             }
+
             noiseAnimation.SetAnimationColor(animationColorLocked);
             noiseAnimation.Play();
-            this.DOKill();
+            this.ShutdownTweens();
 
             var sequence = DOTween.Sequence(this);
 

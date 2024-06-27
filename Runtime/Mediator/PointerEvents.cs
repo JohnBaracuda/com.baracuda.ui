@@ -1,5 +1,5 @@
-﻿using Sirenix.OdinInspector;
-using System;
+﻿using System;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -33,6 +33,11 @@ namespace Baracuda.UI.Mediator
         public void OnPointerDown(PointerEventData eventData)
         {
             PointerDown?.Invoke(this);
+        }
+
+        private void OnDestroy()
+        {
+            targetGraphic.ShutdownTweens();
         }
     }
 }

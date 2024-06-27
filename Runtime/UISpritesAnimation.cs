@@ -1,9 +1,9 @@
-﻿using Baracuda.Bedrock.PlayerLoop;
+﻿using System;
+using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.Utilities;
 using Baracuda.Utilities.Types;
 using DG.Tweening;
 using Sirenix.OdinInspector;
-using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -22,7 +22,7 @@ namespace Baracuda.UI
         [SerializeField] private bool randomizeStart = true;
         [SerializeField] private Image image;
 
-        private Timer _timer;
+        private ScaledTimer _scaledTimer;
         private Loop _loop;
         private Action _update;
         private TweenCallback _onComplete;
@@ -39,6 +39,7 @@ namespace Baracuda.UI
             {
                 _loop.Value = RandomUtility.Int(animationData.Sprites.Length - 1);
             }
+
             _update = OnUpdate;
             _updateInterval = 1f / framesPerSecond;
             _onComplete = () => Gameloop.Update -= _update;
@@ -65,10 +66,11 @@ namespace Baracuda.UI
 
         public void Play()
         {
-            if (IsPlaying || !enabled)
+            if (IsPlaying || !enabled || Gameloop.IsQuitting)
             {
                 return;
             }
+
             IsPlaying = true;
             image.DOComplete(true);
             image.DOColor(_playColor, fadeInTime).SetEase(Ease.InOutSine);
@@ -77,15 +79,17 @@ namespace Baracuda.UI
 
         public void Stop()
         {
-            if (!enabled)
+            if (!enabled || Gameloop.IsQuitting)
             {
                 return;
             }
+
             IsPlaying = false;
             if (Gameloop.IsQuitting)
             {
                 return;
             }
+
             image.DOComplete(true);
             image.DOColor(stopColor, fadeOutTime).SetEase(Ease.InOutSine).OnComplete(_onComplete);
         }
@@ -98,16 +102,18 @@ namespace Baracuda.UI
             {
                 return;
             }
+
             image.DOKill(true);
         }
 
         private void OnUpdate()
         {
-            if (_timer.IsRunning)
+            if (_scaledTimer.IsRunning)
             {
                 return;
             }
-            _timer = Timer.FromSeconds(_updateInterval);
+
+            _scaledTimer = ScaledTimer.FromSeconds(_updateInterval);
             image.sprite = animationData.Sprites[_loop++];
         }
     }

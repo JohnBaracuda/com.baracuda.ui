@@ -1,11 +1,11 @@
-﻿using Baracuda.Bedrock.Input;
+﻿using System;
+using System.Linq;
+using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.Services;
 using Baracuda.UI.Mediator;
 using Baracuda.Utilities;
 using Baracuda.Utilities.Types;
 using Sirenix.OdinInspector;
-using System;
-using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -14,7 +14,7 @@ using Image = UnityEngine.UI.Image;
 
 namespace Baracuda.UI
 {
-    public class DropdownSelection : Selectable,
+    public class MultiSelection : Selectable,
         IPointerClickHandler,
         IPointerEnterHandler,
         IPointerExitHandler,
@@ -25,9 +25,11 @@ namespace Baracuda.UI
         #region Settings
 
         [SerializeField] private bool allowWrapping;
+        [SerializeField] private int indexDisplayLimit = 32;
 
         [Header("Components")]
         [SerializeField] [Required] private Image nextSelectGraphic;
+
         [SerializeField] [Required] private Image previousSelectGraphic;
         [SerializeField] [Required] private TMP_Text selectionTextField;
         [SerializeField] [Required] private Transform indexWidgetContainer;
@@ -38,7 +40,6 @@ namespace Baracuda.UI
         #region Fields
 
         private Loop _index;
-        private DropdownEntry[] _entries;
 
         #endregion
 
@@ -48,14 +49,18 @@ namespace Baracuda.UI
         public bool AllowWrapping { get; set; }
         public bool IsInitialized { get; private set; }
         public int Index => _index;
-        public DropdownEntry Entry => _entries[_index];
+        public SelectionEntry[] Entries { get; private set; }
+
+        public SelectionEntry Entry => Entries[_index];
 
         public event Action PointerEntered;
         public event Action PointerExited;
         public event Action Selected;
+
         public event Action Deselected;
+
         // Index and entry
-        public event Action<DropdownEntry> ValueChanged;
+        public event Action<SelectionEntry> ValueChanged;
 
         public bool IndexWidgetsEnabled { get; private set; }
         public Image[] IndexWidgets { get; private set; } = Array.Empty<Image>();
@@ -76,31 +81,34 @@ namespace Baracuda.UI
 
         #region Setup
 
-        public void Initialize(DropdownEntry[] entries, DropdownEntry startEntry)
+        public void Initialize(SelectionEntry[] entries, SelectionEntry startEntry)
         {
             if (IsInitialized)
             {
                 Shutdown();
             }
+
             IsInitialized = true;
             AllowWrapping = allowWrapping;
-            _entries = entries;
-            startEntry ??= _entries.First();
-            _index = Loop.Create(startEntry.Index, _entries);
+            Entries = entries;
+            startEntry ??= Entries.First();
+            _index = Loop.Create(startEntry.Index, Entries);
             nextSelectGraphic.GetOrAddComponent<PointerEvents>().PointerDown += OnNextPressed;
             previousSelectGraphic.GetOrAddComponent<PointerEvents>().PointerDown += OnPreviousPressed;
 
             var images = indexWidgetContainer.GetComponentsInChildren<Image>();
+
             foreach (var element in images)
             {
                 element.SetActive(false);
             }
 
-            IndexWidgetsEnabled = entries.Length <= 32;
+            IndexWidgetsEnabled = entries.Length <= indexDisplayLimit;
 
             if (IndexWidgetsEnabled)
             {
                 IndexWidgets = new Image[entries.Length];
+
                 for (var index = 0; index < IndexWidgets.Length; index++)
                 {
                     var widget = images.Length - 1 >= index
@@ -134,6 +142,11 @@ namespace Baracuda.UI
 
         public void SelectNext()
         {
+            if (!IsInitialized)
+            {
+                return;
+            }
+
             if (_index.IsMax is false || AllowWrapping)
             {
                 _index++;
@@ -143,6 +156,11 @@ namespace Baracuda.UI
 
         public void SelectPrevious()
         {
+            if (!IsInitialized)
+            {
+                return;
+            }
+
             if (_index.IsMin is false || AllowWrapping)
             {
                 _index--;
@@ -152,22 +170,34 @@ namespace Baracuda.UI
 
         public void SelectElement(int index)
         {
+            if (!IsInitialized)
+            {
+                return;
+            }
+
             if (_index.Value == index)
             {
                 return;
             }
+
+            if (index == -1)
+            {
+                index = RandomUtility.Index(Entries);
+            }
+
             _index.Value = index;
             RefreshRepresentation();
         }
 
         public void RefreshRepresentation()
         {
-            if (_entries == null)
+            if (Entries == null)
             {
                 return;
             }
-            selectionTextField.text = _entries[_index].Name;
-            ValueChanged?.Invoke(_entries[_index]);
+
+            selectionTextField.text = Entries[_index].Name;
+            ValueChanged?.Invoke(Entries[_index]);
         }
 
         #endregion
@@ -206,11 +236,13 @@ namespace Baracuda.UI
         public override void OnMove(AxisEventData eventData)
         {
             base.OnMove(eventData);
+
             if (eventData.moveDir is MoveDirection.Right)
             {
                 SelectNext();
                 return;
             }
+
             if (eventData.moveDir is MoveDirection.Left)
             {
                 SelectPrevious();

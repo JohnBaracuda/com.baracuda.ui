@@ -95,6 +95,7 @@ namespace Baracuda.UI
             {
                 return;
             }
+
             DOTween.Kill(this);
             DOTween.Kill(fillImage);
         }
@@ -106,10 +107,12 @@ namespace Baracuda.UI
             {
                 backgroundImage.color = backgroundColorNormal;
             }
+
             if (borderImage)
             {
                 borderImage.color = borderColorNormal;
             }
+
             if (textField)
             {
                 textField.color = textColorNormal;
@@ -149,11 +152,13 @@ namespace Baracuda.UI
                 FadeToSelected(recoverDuration, Ease.InSine);
                 return;
             }
+
             if (_isHover)
             {
                 FadeToHover(recoverDuration, Ease.InSine);
                 return;
             }
+
             FadeToNormal(recoverDuration, Ease.InSine);
         }
 
@@ -167,11 +172,13 @@ namespace Baracuda.UI
                 FadeToSelected(recoverDuration, Ease.InSine);
                 return;
             }
+
             if (_isHover)
             {
                 FadeToHover(recoverDuration, Ease.InSine);
                 return;
             }
+
             FadeToNormal(recoverDuration, Ease.InSine);
         }
 
@@ -187,10 +194,12 @@ namespace Baracuda.UI
             {
                 return;
             }
+
             if (button.IsHoldInProgress)
             {
                 return;
             }
+
             FadeToSelected();
         }
 
@@ -214,6 +223,7 @@ namespace Baracuda.UI
             {
                 return;
             }
+
             FadeToHover();
         }
 
@@ -224,6 +234,7 @@ namespace Baracuda.UI
             {
                 return;
             }
+
             if (_isSelected)
             {
                 FadeToSelected();
@@ -281,6 +292,13 @@ namespace Baracuda.UI
         private void FadeTo(Color borderColor, Color backgroundColor, Color fontColor, float fontSize,
             float fontSpacing, float duration, Ease ease)
         {
+#if UNITY_EDITOR
+            if (Gameloop.IsQuitting)
+            {
+                return;
+            }
+#endif
+
             this.DOKill();
 
             var sequence = DOTween.Sequence(this);
