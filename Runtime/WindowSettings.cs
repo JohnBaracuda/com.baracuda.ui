@@ -20,11 +20,13 @@ namespace Baracuda.UI
         [SerializeField] private bool forceFirstObjectSelection;
         [HideIf(nameof(autoSelectFirstObject))]
         [SerializeField] [Required] private Selectable firstSelected;
-        [Tooltip("Standalone means that the UI can be handled without influencing or being influenced by other UI")]
         [SerializeField] private bool standalone;
+        [InfoBox("Use WindowNavigationHandler")]
         [SerializeField] private bool overrideNavigation;
         [ShowIf(nameof(overrideNavigation))]
+        [InfoBox("Use WindowNavigationHandler")]
         [SerializeField] private bool clearSelectionOnMouseMovement;
+        [SerializeField] private bool manageSortingOrder = true;
 
         #endregion
 
@@ -44,6 +46,7 @@ namespace Baracuda.UI
         public bool Standalone => standalone;
         public bool OverrideNavigation => overrideNavigation;
         public bool ClearSelectionOnMouseMovement => clearSelectionOnMouseMovement;
+        public bool ManageSortingOrder => manageSortingOrder;
 
         #endregion
     }

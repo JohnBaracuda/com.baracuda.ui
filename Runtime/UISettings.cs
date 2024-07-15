@@ -1,14 +1,14 @@
 ﻿using Baracuda.Bedrock.Assets;
-using Sirenix.OdinInspector;
+using Baracuda.Utilities.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace Baracuda.UI
 {
     public class UISettings : ScriptableAsset
     {
-        [SerializeField] [Required] private InputActionReference returnInput;
+        [Header("Groups")]
+        [SerializeField] private Map<UIGroupReference, UIGroupSettings> groupSettings;
 
-        public InputActionReference ReturnInput => returnInput;
+        public Map<UIGroupReference, UIGroupSettings> GroupSettings => groupSettings;
     }
 }

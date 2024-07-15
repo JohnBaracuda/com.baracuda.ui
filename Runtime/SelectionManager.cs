@@ -1,76 +1,79 @@
 ﻿using System;
 using System.Linq;
-using Baracuda.Bedrock.Events;
-using Baracuda.Bedrock.Injection;
-using Baracuda.Bedrock.Input;
-using Baracuda.Bedrock.Odin;
-using Baracuda.Utilities.Collections;
+using Baracuda.Utilities;
 using JetBrains.Annotations;
-using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Baracuda.UI
 {
-    public class SelectionManager : MonoBehaviour
+    public partial class SelectionManager
     {
-        #region Fields
+        [PublicAPI]
+        public bool HasSelectable => Selected != null;
 
-        [Debug] [Inject] private readonly InputManager _inputManager;
+        [PublicAPI]
+        public Selectable Selected { get; private set; }
 
-        private readonly Broadcast<Selectable> _onSelectionChanged = new();
-        private readonly Broadcast _onSelectionCleared = new();
+        [PublicAPI]
+        public Selectable LastSelected { get; private set; }
 
-        [Debug] private GameObject _lastEventSystemSelection;
+        [PublicAPI]
+        public bool ClearSelectionOnMouseMovement => _clearSelectionOnMouseMovementProvider.Any() && _clearSelectionOnMouseMovementBlocker.IsEmpty();
 
-        #endregion
+        [PublicAPI]
+        public bool KeepInputFieldsSelected => _keepInputFieldsSelectedProvider.Any();
 
-
-        #region Events & Properties
-
-        [Debug] public bool HasSelectable => Selected != null;
-        [Debug] public Selectable Selected { get; private set; }
-        [Debug] public Selectable LastSelected { get; private set; }
-        public ValueStack<bool> ClearSelectionOnMouseMovement { get; } = new();
-        public ValueStack<bool> KeepInputFieldsSelected { get; } = new();
-
+        [PublicAPI]
         public event Action<Selectable> SelectionChanged
         {
             add => _onSelectionChanged.Add(value);
             remove => _onSelectionChanged.Remove(value);
         }
 
+        [PublicAPI]
         public event Action SelectionCleared
         {
             add => _onSelectionCleared.Add(value);
             remove => _onSelectionCleared.Remove(value);
         }
 
-        #endregion
-
-
-        #region Unity Event Methods
-
-        private void Start()
+        [PublicAPI]
+        public void AddClearSelectionOnMouseMovementSource(object source)
         {
-            _inputManager.MouseInputReceived += OnMouseMovement;
+            _clearSelectionOnMouseMovementProvider.Add(source);
         }
 
-        private void OnDestroy()
+        [PublicAPI]
+        public void AddClearSelectionOnMouseMovementBlocker(object blocker)
         {
-            _inputManager.MouseInputReceived -= OnMouseMovement;
+            _clearSelectionOnMouseMovementBlocker.Add(blocker);
         }
 
-        private void LateUpdate()
+        [PublicAPI]
+        public void RemoveClearSelectionOnMouseMovementSource(object source)
         {
-            UpdateEventSystemState();
+            _clearSelectionOnMouseMovementProvider.Remove(source);
         }
 
-        #endregion
+        [PublicAPI]
+        public void RemoveClearSelectionOnMouseMovementBlocker(object blocker)
+        {
+            _clearSelectionOnMouseMovementBlocker.Remove(blocker);
+        }
 
+        [PublicAPI]
+        public void AddKeepInputFieldsSelectedSource(object source)
+        {
+            _keepInputFieldsSelectedProvider.Add(source);
+        }
 
-        #region Public API
+        [PublicAPI]
+        public void RemoveKeepInputFieldsSelectedSource(object source)
+        {
+            _keepInputFieldsSelectedProvider.Remove(source);
+        }
 
         [PublicAPI]
         public void Select(GameObject gameObjectToSelect)
@@ -87,74 +90,7 @@ namespace Baracuda.UI
         [PublicAPI]
         public bool IsSelectionContext(Component component)
         {
-            if (HasSelectable is false)
-            {
-                return false;
-            }
-
-            return Selected.GetComponents<Component>().Any(item => item == component);
+            return HasSelectable && Selected.GetComponents<Component>().Any(item => item == component);
         }
-
-        #endregion
-
-
-        #region Update
-
-        private void UpdateEventSystemState()
-        {
-            if (EventSystem.current == null)
-            {
-                return;
-            }
-
-            var selectedObject = EventSystem.current.currentSelectedGameObject;
-            if (_lastEventSystemSelection == selectedObject)
-            {
-                return;
-            }
-
-            if (selectedObject == null)
-            {
-                _onSelectionCleared.Raise();
-                LastSelected = Selected is SelectionRouter ? LastSelected : Selected;
-                Selected = null;
-                _lastEventSystemSelection = null;
-                return;
-            }
-
-            LastSelected = Selected is SelectionRouter ? LastSelected : Selected;
-            Selected = selectedObject.GetComponent<Selectable>();
-            if (HasSelectable)
-            {
-                _onSelectionChanged.Raise(Selected);
-            }
-
-            _lastEventSystemSelection = selectedObject;
-        }
-
-        #endregion
-
-
-        #region Navigation Callbacks
-
-        private void OnMouseMovement()
-        {
-            if (ClearSelectionOnMouseMovement && HasSelectable)
-            {
-                if (KeepInputFieldsSelected.Value && Selected is TMP_InputField)
-                {
-                    return;
-                }
-
-                if (Selected is HoldButton { IsHoldInProgress: true })
-                {
-                    return;
-                }
-
-                Select(default(Selectable));
-            }
-        }
-
-        #endregion
     }
 }

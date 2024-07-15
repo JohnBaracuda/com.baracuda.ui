@@ -1,8 +1,8 @@
-﻿using Baracuda.Bedrock.Events;
+﻿using System;
 using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.Services;
 using Baracuda.Utilities;
-using System;
+using Baracuda.Utilities.Events;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
