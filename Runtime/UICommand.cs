@@ -95,7 +95,7 @@ namespace Baracuda.UI
         public bool SkipAnimation { get; private protected set; }
         public bool ExecuteImmediate { get; private protected set; }
         public int Priority { get; private protected set; }
-        public UIGroupReference Group { get; private protected set; }
+        public UIGroup Group { get; private protected set; }
 
         #endregion
 
@@ -172,9 +172,9 @@ namespace Baracuda.UI
         /// </summary>
         [PublicAPI]
         [MustUseReturnValue]
-        public UICommand WithGroup(UIGroupReference groupReference)
+        public UICommand WithGroup(UIGroup group)
         {
-            Group = groupReference;
+            Group = group;
             return this;
         }
 
@@ -186,7 +186,7 @@ namespace Baracuda.UI
         [MustUseReturnValue]
         public UICommand InHUDGroup()
         {
-            Group = UIGroupReference.HUD;
+            Group = UIGroup.HUD;
             return this;
         }
 
@@ -198,7 +198,7 @@ namespace Baracuda.UI
         [MustUseReturnValue]
         public UICommand InMenuGroup()
         {
-            Group = UIGroupReference.Menu;
+            Group = UIGroup.Menu;
             return this;
         }
 
@@ -210,7 +210,7 @@ namespace Baracuda.UI
         [MustUseReturnValue]
         public UICommand InOverlayGroup()
         {
-            Group = UIGroupReference.Overlay;
+            Group = UIGroup.Overlay;
             return this;
         }
 

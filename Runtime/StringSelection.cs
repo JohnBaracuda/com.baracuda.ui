@@ -4,6 +4,7 @@ using Baracuda.Utilities;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Serialization;
 
 namespace Baracuda.UI
 {
@@ -20,8 +21,9 @@ namespace Baracuda.UI
 
         [Space]
         [SerializeField] private bool saveSelection;
+        [FormerlySerializedAs("saveAsset")]
         [ShowIf(nameof(saveSelection))]
-        [SerializeField] private StringSaveAsset saveAsset;
+        [SerializeField] private StringAsset asset;
 
         public MultiSelection Selection { get; private set; }
 
@@ -78,7 +80,7 @@ namespace Baracuda.UI
                         firstSelected = entry;
                     }
 
-                    if (saveSelection && saveAsset.Value == uniqueId)
+                    if (saveSelection && asset.Value == uniqueId)
                     {
                         firstSelected = entry;
                     }
@@ -119,7 +121,7 @@ namespace Baracuda.UI
                         firstSelected = entry;
                     }
 
-                    if (saveSelection && saveAsset.Value == uniqueId)
+                    if (saveSelection && asset.Value == uniqueId)
                     {
                         firstSelected = entry;
                     }
@@ -146,7 +148,7 @@ namespace Baracuda.UI
         {
             if (saveSelection)
             {
-                saveAsset.Value = entry.UniqueIdentifier;
+                asset.Value = entry.UniqueIdentifier;
             }
         }
     }

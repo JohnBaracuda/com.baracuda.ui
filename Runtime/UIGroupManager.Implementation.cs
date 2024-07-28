@@ -26,7 +26,7 @@ namespace Baracuda.UI
         private List<IWindow> Stack => _uiStack.List;
 
         [Debug]
-        private UIGroupReference _groupReference;
+        private UIGroup _group;
         [Debug]
         private UIGroupSettings _settings;
         private UIContainer _container;
@@ -43,9 +43,9 @@ namespace Baracuda.UI
         private int SortingOrder => _settings.sortingOrder;
         private bool ConsumeEscape => _settings.consumeEscape;
 
-        public void Initialize(UIGroupReference groupReference, UIContainer container, UIGroupSettings settings)
+        public void Initialize(UIGroup group, UIContainer container, UIGroupSettings settings)
         {
-            _groupReference = groupReference;
+            _group = group;
             _container = container;
             _settings = settings;
             _escapeDelegate = OnEscapePressed;
@@ -133,7 +133,7 @@ namespace Baracuda.UI
                 return;
             }
 
-            Debug.Log("UI", $"Flushing [{_queue.Count}] Commands in [{_groupReference}]");
+            Debug.Log("UI", $"Flushing [{_queue.Count}] Commands in [{_group}]");
 
             while (_queue.TryDequeue(out var scheduledCommand))
             {
@@ -158,7 +158,7 @@ namespace Baracuda.UI
 
         internal async UniTask<IWindow> ProcessUnloadCommand(UICommand command)
         {
-            Assert.IsTrue(command.Group == _groupReference);
+            Assert.IsTrue(command.Group == _group);
             Assert.IsTrue(command.CommandType == UICommandType.Unload);
 
             if (_transitionSequence.IsActive())
@@ -178,7 +178,7 @@ namespace Baracuda.UI
 
         internal async UniTask<IWindow> ProcessLoadCommand(UICommand command)
         {
-            Assert.IsTrue(command.Group == _groupReference);
+            Assert.IsTrue(command.Group == _group);
             Assert.IsTrue(command.CommandType == UICommandType.Load);
 
             return await LoadAsyncInternal(command);
@@ -186,7 +186,7 @@ namespace Baracuda.UI
 
         internal async UniTask<IWindow> ProcessVisibilityCommand(UICommand command)
         {
-            Assert.IsTrue(command.Group == _groupReference);
+            Assert.IsTrue(command.Group == _group);
             Assert.IsTrue(command.CommandType != UICommandType.Unload);
             Assert.IsTrue(command.CommandType != UICommandType.Load);
 
@@ -226,7 +226,7 @@ namespace Baracuda.UI
 
         private async UniTask<IWindow> FocusAsyncInternal(UICommand command)
         {
-            Assert.IsTrue(command.Group == _groupReference);
+            Assert.IsTrue(command.Group == _group);
             var window = command.Window ?? await _container.LoadAsync(command.WindowType);
 
             if (IsOnTopOfStack(window))
@@ -261,7 +261,7 @@ namespace Baracuda.UI
         private async UniTask<IWindow> OpenAsyncInternal(UICommand command)
         {
             Assert.IsFalse(_transitionSequence.IsActive());
-            Assert.IsTrue(command.Group == _groupReference);
+            Assert.IsTrue(command.Group == _group);
 
             var window = command.Window ?? await _container.LoadAsync(command.WindowType);
             var previousWindow = _uiStack.Peek();
@@ -330,7 +330,7 @@ namespace Baracuda.UI
 
             Assert.IsTrue(IsCommandWindowOpen(command));
             Assert.IsTrue(!_transitionSequence.IsActive());
-            Assert.IsTrue(command.Group == _groupReference);
+            Assert.IsTrue(command.Group == _group);
 
             var window = command.Window ?? _container.Get(command.WindowType);
 

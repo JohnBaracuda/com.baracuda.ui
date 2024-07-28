@@ -17,7 +17,7 @@ namespace Baracuda.UI
 
         [Inject] [Debug] private readonly UISettings _settings;
 
-        private readonly Dictionary<UIGroupReference, UIGroupManager> _groups = new();
+        private readonly Dictionary<UIGroup, UIGroupManager> _groups = new();
 
         private UIContainer _container;
 
@@ -39,7 +39,7 @@ namespace Baracuda.UI
             Implementation = this;
             _container = gameObject.AddComponent<UIContainer>();
 
-            foreach (var group in UIGroupReference.Registry.AllGroups())
+            foreach (var group in UIGroup.Registry.AllGroups())
             {
                 var groupObject = new GameObject(group.ToString());
                 groupObject.transform.SetParent(gameObject.transform);
@@ -80,7 +80,7 @@ namespace Baracuda.UI
 
             if (!command.Group.IsValid)
             {
-                var groupType = command.Window?.GetDefaultGroup() ?? UIGroupReference.HUD;
+                var groupType = command.Window?.GetDefaultGroup() ?? UIGroup.HUD;
                 command.WithGroup(groupType);
             }
 
@@ -94,7 +94,7 @@ namespace Baracuda.UI
 
             if (!command.Group.IsValid)
             {
-                var groupType = command.Window?.GetDefaultGroup() ?? UIGroupReference.HUD;
+                var groupType = command.Window?.GetDefaultGroup() ?? UIGroup.HUD;
                 command.WithGroup(groupType);
             }
 
@@ -109,7 +109,7 @@ namespace Baracuda.UI
 
             if (!command.Group.IsValid)
             {
-                var groupType = command.Window?.GetDefaultGroup() ?? UIGroupReference.HUD;
+                var groupType = command.Window?.GetDefaultGroup() ?? UIGroup.HUD;
                 command.WithGroup(groupType);
             }
 

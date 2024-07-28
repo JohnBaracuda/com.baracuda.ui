@@ -10,9 +10,9 @@ namespace Baracuda.UI
     [RequireComponent(typeof(Canvas))]
     [RequireComponent(typeof(CanvasGroup))]
     [RequireComponent(typeof(CanvasScaleController))]
-    public abstract class CanvasWindow : MonoBehaviour, IWindow
+    public abstract class Window : MonoBehaviour, IWindow
     {
-        [SerializeField] private UIGroupReference group = UIGroupReference.Menu;
+        [SerializeField] private UIGroup group = UIGroup.Menu;
         [SerializeField] [Required] private Canvas canvas;
         [SerializeField] [Required] private CanvasGroup canvasGroup;
 
@@ -30,7 +30,7 @@ namespace Baracuda.UI
             this.DOKill();
         }
 
-        protected void OnValidate()
+        protected virtual void OnValidate()
         {
             canvas ??= GetComponent<Canvas>();
             canvasGroup ??= GetComponent<CanvasGroup>();
@@ -59,7 +59,7 @@ namespace Baracuda.UI
             return sequence;
         }
 
-        public UIGroupReference GetDefaultGroup()
+        public virtual UIGroup GetDefaultGroup()
         {
             return group;
         }

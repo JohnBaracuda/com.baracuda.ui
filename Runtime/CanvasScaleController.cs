@@ -11,7 +11,7 @@ namespace Baracuda.UI
     [RequireComponent(typeof(CanvasScaler))]
     public class CanvasScaleController : MonoBehaviour
     {
-        [SerializeField] [Required] private FloatSaveAsset canvasScaleFactorAsset;
+        [SerializeField] [Required] private FloatAsset canvasScaleFactorAsset;
         [SerializeField] [Required] private CanvasScaler canvasScaler;
 
         private const float MinScaleFactor = .1f;

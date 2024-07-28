@@ -146,9 +146,9 @@ namespace Baracuda.UI
         /// </summary>
         [PublicAPI]
         [MustUseReturnValue]
-        public new UICommand<T> WithGroup(UIGroupReference groupReference)
+        public new UICommand<T> WithGroup(UIGroup group)
         {
-            Group = groupReference;
+            Group = group;
             return this;
         }
 
@@ -160,7 +160,7 @@ namespace Baracuda.UI
         [MustUseReturnValue]
         public new UICommand<T> InHUDGroup()
         {
-            Group = UIGroupReference.HUD;
+            Group = UIGroup.HUD;
             return this;
         }
 
@@ -172,7 +172,7 @@ namespace Baracuda.UI
         [MustUseReturnValue]
         public new UICommand<T> InMenuGroup()
         {
-            Group = UIGroupReference.Menu;
+            Group = UIGroup.Menu;
             return this;
         }
 
@@ -184,7 +184,7 @@ namespace Baracuda.UI
         [MustUseReturnValue]
         public new UICommand<T> InOverlayGroup()
         {
-            Group = UIGroupReference.Overlay;
+            Group = UIGroup.Overlay;
             return this;
         }
 

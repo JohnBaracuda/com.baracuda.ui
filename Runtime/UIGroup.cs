@@ -7,14 +7,43 @@ using UnityEngine;
 
 namespace Baracuda.UI
 {
+    /// <summary>
+    ///     Represents a UI group with a unique identifier. This struct provides functionality for
+    ///     creating and managing UI groups, including predefined groups such as HUD, Menu, and Overlay.
+    /// </summary>
     [Serializable]
-    public struct UIGroupReference : IEquatable<UIGroupReference>
+    public struct UIGroup : IEquatable<UIGroup>
     {
-        #region Fundamentals
+        #region Public API
 
-        public static readonly UIGroupReference HUD = Create(nameof(HUD));
-        public static readonly UIGroupReference Menu = Create(nameof(Menu));
-        public static readonly UIGroupReference Overlay = Create(nameof(Overlay));
+        /// <summary>
+        ///     Predefined UI group for HUD elements.
+        /// </summary>
+        public static readonly UIGroup HUD = Create(nameof(HUD));
+
+        /// <summary>
+        ///     Predefined UI group for Menu elements.
+        /// </summary>
+        public static readonly UIGroup Menu = Create(nameof(Menu));
+
+        /// <summary>
+        ///     Predefined UI group for Overlay elements.
+        /// </summary>
+        public static readonly UIGroup Overlay = Create(nameof(Overlay));
+
+        /// <summary>
+        ///     Creates a new UI group with a specified name.
+        /// </summary>
+        /// <param name="name">The name of the UI group.</param>
+        /// <returns>The created UI group.</returns>
+        [BurstDiscard]
+        public static UIGroup Create(string name)
+        {
+            var value = name.ComputeFNV1aHash();
+            var key = new UIGroup(value);
+            Registry.AddKey(name, value);
+            return key;
+        }
 
         #endregion
 
@@ -25,7 +54,7 @@ namespace Baracuda.UI
 
         public readonly int Value => value;
 
-        public UIGroupReference(int value)
+        public UIGroup(int value)
         {
             this.value = value;
         }
@@ -33,16 +62,7 @@ namespace Baracuda.UI
         public bool IsValid => value != 0;
 
         [BurstDiscard]
-        public static UIGroupReference Create(string name)
-        {
-            var value = name.ComputeFNV1aHash();
-            var key = new UIGroupReference(value);
-            Registry.AddKey(name, value);
-            return key;
-        }
-
-        [BurstDiscard]
-        public static implicit operator UIGroupReference(string name)
+        public static implicit operator UIGroup(string name)
         {
             return Create(name);
         }
@@ -58,24 +78,24 @@ namespace Baracuda.UI
 
         #region IEquatable
 
-        public bool Equals(UIGroupReference other)
+        public bool Equals(UIGroup other)
         {
             return value == other.value;
         }
 
-        public static bool operator ==(UIGroupReference rhs, UIGroupReference lhs)
+        public static bool operator ==(UIGroup rhs, UIGroup lhs)
         {
             return rhs.Equals(lhs);
         }
 
-        public static bool operator !=(UIGroupReference rhs, UIGroupReference lhs)
+        public static bool operator !=(UIGroup rhs, UIGroup lhs)
         {
             return !rhs.Equals(lhs);
         }
 
         public override bool Equals(object obj)
         {
-            return obj is UIGroupReference other && Equals(other);
+            return obj is UIGroup other && Equals(other);
         }
 
         public override int GetHashCode()
@@ -90,7 +110,7 @@ namespace Baracuda.UI
 
         public static class Registry
         {
-            public static IEnumerable<UIGroupReference> AllGroups()
+            public static IEnumerable<UIGroup> AllGroups()
             {
                 using var buffer = new Buffer<string>(keyNames.Values);
                 foreach (var name in buffer)
@@ -108,7 +128,7 @@ namespace Baracuda.UI
                 keyNames.TryAdd(key, name);
             }
 
-            public static string GetName(in UIGroupReference reference)
+            public static string GetName(in UIGroup reference)
             {
                 return keyNames[reference.Value];
             }

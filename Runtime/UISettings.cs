@@ -1,14 +1,13 @@
-﻿using Baracuda.Bedrock.Assets;
-using Baracuda.Utilities.Collections;
+﻿using Baracuda.Utilities.Collections;
 using UnityEngine;
 
 namespace Baracuda.UI
 {
-    public class UISettings : ScriptableAsset
+    public class UISettings : ScriptableObject
     {
         [Header("Groups")]
-        [SerializeField] private Map<UIGroupReference, UIGroupSettings> groupSettings;
+        [SerializeField] private Map<UIGroup, UIGroupSettings> groupSettings;
 
-        public Map<UIGroupReference, UIGroupSettings> GroupSettings => groupSettings;
+        public Map<UIGroup, UIGroupSettings> GroupSettings => groupSettings;
     }
 }

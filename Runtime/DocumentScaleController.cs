@@ -9,7 +9,7 @@ namespace Baracuda.UI
     [RequireComponent(typeof(UIDocument))]
     public class DocumentScaleController : MonoBehaviour
     {
-        [SerializeField] [Required] private FloatSaveAsset canvasScaleFactorAsset;
+        [SerializeField] [Required] private FloatAsset canvasScaleFactorAsset;
         [SerializeField] [Required] private UIDocument uiDocument;
 
         private const float MinScaleFactor = .1f;

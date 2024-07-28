@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Baracuda.UI.Editor
 {
-    [UnityEditor.CustomPropertyDrawer(typeof(UIGroupReference))]
+    [UnityEditor.CustomPropertyDrawer(typeof(UIGroup))]
     public class UIGroupReferenceDrawer : UnityEditor.PropertyDrawer
     {
         private string[] _options;
@@ -12,7 +12,7 @@ namespace Baracuda.UI.Editor
 
         public override void OnGUI(Rect position, UnityEditor.SerializedProperty property, GUIContent label)
         {
-            _options ??= UIGroupReference.Registry.Keys.Values.ToArray();
+            _options ??= UIGroup.Registry.Keys.Values.ToArray();
             var valueProperty = property.FindPropertyRelative("value");
 
             if (_selectedIndex == -1)
@@ -32,7 +32,7 @@ namespace Baracuda.UI.Editor
 
         private int KeyToIndex(int keyValue)
         {
-            foreach (var (key, name) in UIGroupReference.Registry.Keys)
+            foreach (var (key, name) in UIGroup.Registry.Keys)
             {
                 if (keyValue == key)
                 {
@@ -47,7 +47,7 @@ namespace Baracuda.UI.Editor
         {
             var displayName = _options[index];
 
-            foreach (var (key, name) in UIGroupReference.Registry.Keys)
+            foreach (var (key, name) in UIGroup.Registry.Keys)
             {
                 if (displayName == name)
                 {

@@ -13,6 +13,6 @@ namespace Baracuda.UI
         bool SkipAnimation { get; }
         bool ExecuteImmediate { get; }
         int Priority { get; }
-        UIGroupReference? Group { get; }
+        UIGroup? Group { get; }
     }
 }
