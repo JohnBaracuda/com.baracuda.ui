@@ -1,4 +1,4 @@
-﻿using Baracuda.Bedrock.Mediator;
+﻿using Baracuda.Bedrock.Values;
 using Baracuda.Serialization;
 using Baracuda.Utilities;
 using Sirenix.OdinInspector;
@@ -11,7 +11,7 @@ namespace Baracuda.UI
     [RequireComponent(typeof(CanvasScaler))]
     public class CanvasScaleController : MonoBehaviour
     {
-        [SerializeField] [Required] private FloatAsset canvasScaleFactorAsset;
+        [SerializeField] [Required] private FloatValueAsset canvasScaleFactorAsset;
         [SerializeField] [Required] private CanvasScaler canvasScaler;
 
         private const float MinScaleFactor = .1f;

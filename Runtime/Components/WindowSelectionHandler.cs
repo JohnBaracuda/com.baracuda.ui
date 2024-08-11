@@ -19,6 +19,7 @@ namespace Baracuda.UI.Components
         [HideIf(nameof(autoSelectFirstGameObject))]
         [SerializeField] private Selectable firstSelected;
         [SerializeField] private Selectable[] selectables;
+        [SerializeField] private bool dontLoseFocusOnMouseMovement;
 
         private Action _forceSelectObject;
         private Action _forceDeselectObject;
@@ -69,6 +70,11 @@ namespace Baracuda.UI.Components
             {
                 ForceSelectObject();
             }
+
+            if (dontLoseFocusOnMouseMovement)
+            {
+                selectionManager.AddClearSelectionOnMouseMovementBlocker(this);
+            }
         }
 
         public void OnWindowLostFocus()
@@ -83,6 +89,7 @@ namespace Baracuda.UI.Components
 
             var selectionManager = ServiceLocator.Get<SelectionManager>();
             selectionManager.SelectionChanged -= _cacheSelection;
+            selectionManager.RemoveClearSelectionOnMouseMovementBlocker(this);
 
             EventSystem.current.SetSelectedGameObject(null);
         }
@@ -140,15 +147,21 @@ namespace Baracuda.UI.Components
                 return _lastSelected;
             }
 
-            // GetIfLoaded a predetermined first selection object.
-            if (autoSelectFirstGameObject && firstSelected)
+            // Get a predetermined first selection object.
+            if (!autoSelectFirstGameObject && firstSelected)
             {
                 return firstSelected.gameObject;
             }
 
             // Try to return the first found selectable component.
-            var defaultSelection = selectables.FirstOrDefault();
-            return defaultSelection != null ? defaultSelection.gameObject : null;
+            foreach (var selectable in selectables)
+            {
+                if (selectable.IsActiveInHierarchy())
+                {
+                    return selectable.gameObject;
+                }
+            }
+            return firstSelected?.gameObject;
         }
 
         public void DisableSelectables()

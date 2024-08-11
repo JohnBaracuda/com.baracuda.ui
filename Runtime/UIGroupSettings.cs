@@ -1,4 +1,5 @@
 ﻿using System;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Baracuda.UI
@@ -10,5 +11,9 @@ namespace Baracuda.UI
         public int sortingOrder;
         [Tooltip("When enabled, the UI Group can consume escape during transitions")]
         public bool consumeEscape;
+        [Tooltip("When enabled, the UI Group can consume escape during transitions")]
+        public bool hasBackground;
+        [ShowIf(nameof(hasBackground))]
+        public UIBackground background;
     }
 }

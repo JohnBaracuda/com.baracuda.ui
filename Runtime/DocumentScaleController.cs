@@ -1,4 +1,4 @@
-﻿using Baracuda.Bedrock.Mediator;
+﻿using Baracuda.Bedrock.Values;
 using Baracuda.Utilities;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -9,7 +9,7 @@ namespace Baracuda.UI
     [RequireComponent(typeof(UIDocument))]
     public class DocumentScaleController : MonoBehaviour
     {
-        [SerializeField] [Required] private FloatAsset canvasScaleFactorAsset;
+        [SerializeField] [Required] private FloatValueAsset canvasScaleFactorAsset;
         [SerializeField] [Required] private UIDocument uiDocument;
 
         private const float MinScaleFactor = .1f;

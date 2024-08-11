@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using Baracuda.Bedrock.Injection;
 using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.Odin;
+using Baracuda.Bedrock.Services;
 using Baracuda.Utilities.Events;
 using TMPro;
 using UnityEngine;
@@ -12,7 +12,7 @@ namespace Baracuda.UI
 {
     public partial class SelectionManager : MonoBehaviour
     {
-        [Debug] [Inject] private readonly InputManager _inputManager;
+        private InputManager _inputManager;
 
         private readonly Broadcast<Selectable> _onSelectionChanged = new();
         private readonly Broadcast _onSelectionCleared = new();
@@ -25,6 +25,7 @@ namespace Baracuda.UI
 
         private void Start()
         {
+            ServiceLocator.Inject(ref _inputManager);
             _inputManager.MouseInputReceived += OnMouseMovement;
         }
 

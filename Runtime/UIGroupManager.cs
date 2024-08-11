@@ -1,6 +1,7 @@
 ﻿using System;
 using JetBrains.Annotations;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 // ReSharper disable SuspiciousTypeConversion.Global
 
@@ -8,7 +9,20 @@ namespace Baracuda.UI
 {
     public partial class UIGroupManager : MonoBehaviour
     {
-        #region Public API
+        [PublicAPI]
+        public UIBackground Background => _background;
+
+        [PublicAPI]
+        public void BlockBackground(Object source)
+        {
+            BlockBackgroundInternal(source);
+        }
+
+        [PublicAPI]
+        public void UnblockBackground(Object source)
+        {
+            UnblockBackgroundInternal(source);
+        }
 
         /// <summary>
         ///     Triggered when the open sequence of a UI window starts.
@@ -16,8 +30,8 @@ namespace Baracuda.UI
         [PublicAPI]
         public event Action<IWindow> OpenSequenceStarted
         {
-            add => _openSequenceStarted.Add(value);
-            remove => _openSequenceStarted.Remove(value);
+            add => _openSequenceStarted.AddListener(value);
+            remove => _openSequenceStarted.RemoveListener(value);
         }
 
         /// <summary>
@@ -26,8 +40,8 @@ namespace Baracuda.UI
         [PublicAPI]
         public event Action<IWindow> OpenSequenceCompleted
         {
-            add => _openSequenceCompleted.Add(value);
-            remove => _openSequenceCompleted.Remove(value);
+            add => _openSequenceCompleted.AddListener(value);
+            remove => _openSequenceCompleted.RemoveListener(value);
         }
 
         /// <summary>
@@ -36,8 +50,8 @@ namespace Baracuda.UI
         [PublicAPI]
         public event Action<IWindow> CloseSequenceStarted
         {
-            add => _closeSequenceStarted.Add(value);
-            remove => _closeSequenceStarted.Remove(value);
+            add => _closeSequenceStarted.AddListener(value);
+            remove => _closeSequenceStarted.RemoveListener(value);
         }
 
         /// <summary>
@@ -46,8 +60,8 @@ namespace Baracuda.UI
         [PublicAPI]
         public event Action<IWindow> CloseSequenceCompleted
         {
-            add => _closeSequenceCompleted.Add(value);
-            remove => _closeSequenceCompleted.Remove(value);
+            add => _closeSequenceCompleted.AddListener(value);
+            remove => _closeSequenceCompleted.RemoveListener(value);
         }
 
         /// <summary>
@@ -69,7 +83,5 @@ namespace Baracuda.UI
             add => _transitionCompleted.Add(value);
             remove => _transitionCompleted.Remove(value);
         }
-
-        #endregion
     }
 }

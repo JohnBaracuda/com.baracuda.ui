@@ -28,8 +28,8 @@ namespace Baracuda.UI
         [PublicAPI]
         public event Action<Selectable> SelectionChanged
         {
-            add => _onSelectionChanged.Add(value);
-            remove => _onSelectionChanged.Remove(value);
+            add => _onSelectionChanged.AddListener(value);
+            remove => _onSelectionChanged.RemoveListener(value);
         }
 
         [PublicAPI]

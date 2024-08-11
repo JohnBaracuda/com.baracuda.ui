@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
+using Baracuda.Bedrock.Values;
 using Baracuda.Utilities;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Localization;
 
@@ -9,11 +11,16 @@ namespace Baracuda.UI
     [RequireComponent(typeof(MultiSelection))]
     public class MultiSelection<T> : MonoBehaviour where T : unmanaged, Enum
     {
-        public event Action<T> ValueChanged;
+        [SerializeField] [Required] private SaveDataAsset<T> valueAsset;
 
         public MultiSelection Selection { get; private set; }
 
-        public T Value { get; private set; }
+        public virtual T Value
+        {
+            get => valueAsset.GetValue();
+            set => valueAsset.SetValue(value);
+        }
+
         private bool _isInitialized;
 
         public void Start()
@@ -47,6 +54,20 @@ namespace Baracuda.UI
             Selection.Initialize(entries, startEntry);
             Selection.ValueChanged += OnValueChanged;
             OnValueChanged(startEntry);
+
+            valueAsset.Changed += UpdateDisplayedValue;
+        }
+
+        private void OnDestroy()
+        {
+            Selection.ValueChanged -= OnValueChanged;
+            valueAsset.Changed -= UpdateDisplayedValue;
+        }
+
+        private void UpdateDisplayedValue(T value)
+        {
+            var entry = Selection.Entries.First(entry => entry.EnumValue == EnumUtility<T>.ToInt(value));
+            Selection.SelectElement(entry.Index);
         }
 
         public void SelectElement(T value)
@@ -73,7 +94,7 @@ namespace Baracuda.UI
             Selection.ValueChanged -= OnValueChanged;
         }
 
-        protected virtual string GetSystemName(T value)
+        protected string GetSystemName(T value)
         {
             return value.ToString();
         }
@@ -83,17 +104,10 @@ namespace Baracuda.UI
             return null;
         }
 
-        protected virtual bool IsValidEntry(T value)
-        {
-            return true;
-        }
-
         private void OnValueChanged(SelectionEntry selection)
         {
             var value = EnumUtility<T>.FromInt(selection.EnumValue);
             Value = value;
-
-            ValueChanged?.Invoke(value);
         }
     }
 }

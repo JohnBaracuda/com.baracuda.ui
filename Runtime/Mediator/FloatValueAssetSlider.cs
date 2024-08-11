@@ -1,6 +1,6 @@
+using System.Globalization;
 using Baracuda.Bedrock.Values;
 using Baracuda.Utilities;
-using System.Globalization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Localization;
@@ -18,7 +18,7 @@ namespace Baracuda.UI.Mediator
         [SerializeField] private int maxValue = 1;
         [SerializeField] private float conversionFactor = 1;
         [Space]
-        [SerializeField] private ValueAssetRW<float> valueAsset;
+        [SerializeField] private FloatValueAsset valueAsset;
         [Space]
         [SerializeField] private Slider slider;
         [SerializeField] private SelectedEvent selectedEvent;

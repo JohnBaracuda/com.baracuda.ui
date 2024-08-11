@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Baracuda.Bedrock.Injection;
-using Baracuda.Bedrock.Odin;
+using Baracuda.Bedrock.Services;
 using Baracuda.Utilities.Collections;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -15,7 +14,7 @@ namespace Baracuda.UI
 
         private static UIManager Implementation { get; set; }
 
-        [Inject] [Debug] private readonly UISettings _settings;
+        private UISettings _settings;
 
         private readonly Dictionary<UIGroup, UIGroupManager> _groups = new();
 
@@ -34,7 +33,7 @@ namespace Baracuda.UI
 
         private void Awake()
         {
-            Inject.Dependencies(this);
+            ServiceLocator.Inject(ref _settings);
 
             Implementation = this;
             _container = gameObject.AddComponent<UIContainer>();
@@ -192,6 +191,54 @@ namespace Baracuda.UI
             foreach (var group in _groups.Values)
             {
                 if (group.IsOrWillOpen<T>())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool IsClosedInAllGroups<T>(T instance) where T : MonoBehaviour, IWindow
+        {
+            foreach (var group in _groups.Values)
+            {
+                if (group.IsClosed<T>(instance))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool IsClosedInAllGroups<T>() where T : MonoBehaviour, IWindow
+        {
+            foreach (var group in _groups.Values)
+            {
+                if (group.IsOrWillOpen<T>())
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool IsOrWillCloseInAnyGroup<T>(T instance) where T : MonoBehaviour, IWindow
+        {
+            foreach (var group in _groups.Values)
+            {
+                if (group.IsOrWillClose<T>(instance))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool IsOrWillCloseInAnyGroup<T>() where T : MonoBehaviour, IWindow
+        {
+            foreach (var group in _groups.Values)
+            {
+                if (group.IsOrWillClose<T>())
                 {
                     return true;
                 }

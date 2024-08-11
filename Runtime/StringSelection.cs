@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using Baracuda.Bedrock.Mediator;
+using Baracuda.Bedrock.Values;
 using Baracuda.Utilities;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -23,7 +23,7 @@ namespace Baracuda.UI
         [SerializeField] private bool saveSelection;
         [FormerlySerializedAs("saveAsset")]
         [ShowIf(nameof(saveSelection))]
-        [SerializeField] private StringAsset asset;
+        [SerializeField] private StringValueAsset asset;
 
         public MultiSelection Selection { get; private set; }
 
@@ -137,11 +137,19 @@ namespace Baracuda.UI
                 Selection.Initialize(entries, firstSelected);
                 _isInitialized = true;
             }
+            asset.Changed += UpdateValueIfNecessary;
+        }
+
+        private void UpdateValueIfNecessary(string value)
+        {
+            var entry = Selection.Entries.First(entry => entry.UniqueIdentifier == value);
+            Selection.SelectElement(entry.Index);
         }
 
         private void OnDestroy()
         {
             Selection.ValueChanged -= OnValueChanged;
+            asset.Changed -= UpdateValueIfNecessary;
         }
 
         private void OnValueChanged(SelectionEntry entry)

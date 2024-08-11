@@ -13,6 +13,7 @@ using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Object = UnityEngine.Object;
 
 // ReSharper disable SuspiciousTypeConversion.Global
 
@@ -29,6 +30,9 @@ namespace Baracuda.UI
         private UIGroup _group;
         [Debug]
         private UIGroupSettings _settings;
+        [Debug]
+        private UIBackground _background;
+        private bool _hasGroupBackground;
         private UIContainer _container;
         private Sequence _transitionSequence;
         private readonly PriorityQueue<(UICommand command, UniTaskCompletionSource<IWindow> completionSource)> _queue = new();
@@ -49,6 +53,12 @@ namespace Baracuda.UI
             _container = container;
             _settings = settings;
             _escapeDelegate = OnEscapePressed;
+            if (settings.hasBackground && settings.background)
+            {
+                _background = Instantiate(settings.background);
+                _background.DontDestroyOnLoad();
+                _hasGroupBackground = true;
+            }
         }
 
         #endregion
@@ -94,6 +104,7 @@ namespace Baracuda.UI
                         ExecuteWindowFocusLossCallbacks(window);
                         _uiStack.Remove(window);
                         await window.HideAsync(context).AsyncWaitForCompletion();
+                        ExecuteWindowClosedCallbacks(window);
                         SetActive(window, false);
                     }
                     ResetEscapeForTransition();
@@ -110,7 +121,11 @@ namespace Baracuda.UI
                         ExecuteWindowFocusLossCallbacks(window);
                         _uiStack.Remove(window);
                         var sequence = window.HideAsync(context);
-                        sequence.OnComplete(() => SetActive(window, false));
+                        sequence.OnComplete(() =>
+                        {
+                            SetActive(window, false);
+                            ExecuteWindowClosedCallbacks(window);
+                        });
                         tasks.Add(sequence.AsyncWaitForCompletion());
                     }
 
@@ -339,7 +354,8 @@ namespace Baracuda.UI
 
             var refocusWindow = _uiStack.Peek();
             var transitionSettings = GetTransitionSettingsForWindow(refocusWindow);
-            var showWindowAgain = refocusWindow != null && (transitionSettings & TransitionSettings.HideWhenLosingFocus) > 0;
+            var wasWindowHidden = (GetTransitionSettingsForWindow(window) & TransitionSettings.HideUnderlyingWindows) != 0;
+            var showWindowAgain = refocusWindow != null && (wasWindowHidden || (transitionSettings & TransitionSettings.HideWhenLosingFocus) > 0);
 
             var context = UIContext.Create()
                 .FromWindow(window)
@@ -353,11 +369,10 @@ namespace Baracuda.UI
             var hideSequence = window.HideAsync(context);
             _transitionSequence.Append(hideSequence);
 
-            // TODO: Append or Join
             if (showWindowAgain)
             {
                 var showSequence = refocusWindow.ShowAsync(context);
-                _transitionSequence.Append(showSequence);
+                _transitionSequence.Join(showSequence);
             }
 
             _transitionSequence.OnComplete(() =>
@@ -464,6 +479,11 @@ namespace Baracuda.UI
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void AddWindowToStack(IWindow window, UICommand command)
         {
+            if (_hasGroupBackground && _uiStack.Count == 0 && _backgroundBlocker.Count <= 0)
+            {
+                _background.Show();
+            }
+
             var previousFocusWindow = _uiStack.Peek();
 
             _uiStack.PushUnique(window);
@@ -482,9 +502,13 @@ namespace Baracuda.UI
 
         private void UpdateWindowSortingOrder()
         {
+            if (_hasGroupBackground)
+            {
+                _background.SetSortingOrder(SortingOrder);
+            }
             for (var index = 0; index < _uiStack.List.Count; index++)
             {
-                var sortingOrder = SortingOrder + index * 100;
+                var sortingOrder = SortingOrder + (index + 1) * 100;
                 _uiStack[index].SetSortingOrder(sortingOrder);
             }
         }
@@ -548,6 +572,11 @@ namespace Baracuda.UI
             else
             {
                 _uiStack.Remove(window);
+            }
+
+            if (_hasGroupBackground && _uiStack.Count == 0)
+            {
+                _background.Hide();
             }
 
             UpdateWindowSortingOrder();
@@ -639,6 +668,69 @@ namespace Baracuda.UI
         #endregion
 
 
+        #region Is Or Will Close
+
+        public bool IsClosed<T>(IWindow instance) where T : MonoBehaviour, IWindow
+        {
+            if (instance != null)
+            {
+                return !_uiStack.Contains(instance);
+            }
+            return IsClosed<T>();
+        }
+
+        public bool IsClosed<T>() where T : MonoBehaviour, IWindow
+        {
+            foreach (var window in _uiStack)
+            {
+                if (window is T)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public bool IsOrWillClose<T>(IWindow instance) where T : MonoBehaviour, IWindow
+        {
+            var isClosed = IsClosed<T>(instance);
+            if (isClosed)
+            {
+                return true;
+            }
+
+            foreach (var (command, _) in _queue)
+            {
+                var isCloseCommand = command.CommandType is UICommandType.Close or UICommandType.Toggle;
+                if (isCloseCommand && instance == command.Window)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool IsOrWillClose<T>() where T : MonoBehaviour, IWindow
+        {
+            var isClosed = IsClosed<T>();
+            if (isClosed)
+            {
+                return true;
+            }
+
+            foreach (var (command, _) in _queue)
+            {
+                if (command.CommandType is UICommandType.Close or UICommandType.Toggle)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        #endregion
+
+
         #region Transition Methods
 
         internal async void UpdateCommandQueue()
@@ -667,10 +759,6 @@ namespace Baracuda.UI
         private void ExecuteWindowOpeningCallbacks(IWindow window)
         {
             _openSequenceStarted.Raise(window);
-            if (window is IWindowOpening windowOpeningCallback)
-            {
-                windowOpeningCallback.OnWindowOpening();
-            }
 
             if (window is not MonoBehaviour monoBehaviour)
             {
@@ -686,10 +774,6 @@ namespace Baracuda.UI
         private void ExecuteWindowOpenedCallbacks(IWindow window)
         {
             _openSequenceCompleted.Raise(window);
-            if (window is IWindowOpened windowOpeningCallback)
-            {
-                windowOpeningCallback.OnWindowOpened();
-            }
 
             if (window is not MonoBehaviour monoBehaviour)
             {
@@ -705,10 +789,6 @@ namespace Baracuda.UI
         private void ExecuteWindowClosingCallbacks(IWindow window)
         {
             _closeSequenceStarted.Raise(window);
-            if (window is IWindowClosing windowOpeningCallback)
-            {
-                windowOpeningCallback.OnWindowClosing();
-            }
 
             if (window is not MonoBehaviour monoBehaviour)
             {
@@ -724,10 +804,6 @@ namespace Baracuda.UI
         private void ExecuteWindowClosedCallbacks(IWindow window)
         {
             _closeSequenceCompleted.Raise(window);
-            if (window is IWindowClosed windowOpeningCallback)
-            {
-                windowOpeningCallback.OnWindowClosed();
-            }
 
             if (window is not MonoBehaviour monoBehaviour)
             {
@@ -774,6 +850,39 @@ namespace Baracuda.UI
             foreach (var windowOpening in monoBehaviour.GetComponents<IWindowFocusLost>())
             {
                 windowOpening.OnWindowLostFocus();
+            }
+        }
+
+        #endregion
+
+
+        #region Background Blocking
+
+        [Debug]
+        private HashSet<Object> _backgroundBlocker = new();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void BlockBackgroundInternal(Object source)
+        {
+            if (!_hasGroupBackground)
+            {
+                return;
+            }
+            _backgroundBlocker.Add(source);
+            _background.Hide();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void UnblockBackgroundInternal(Object source)
+        {
+            if (!_hasGroupBackground)
+            {
+                return;
+            }
+            _backgroundBlocker.Remove(source);
+            if (_backgroundBlocker.Count == 0 && _uiStack.Count > 0)
+            {
+                _background.Show();
             }
         }
 

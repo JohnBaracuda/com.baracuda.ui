@@ -53,8 +53,8 @@ namespace Baracuda.UI
 
         public event Action<float> HoldProgress
         {
-            add => _onHoldProgress.Add(value);
-            remove => _onHoldProgress.Remove(value);
+            add => _onHoldProgress.AddListener(value);
+            remove => _onHoldProgress.RemoveListener(value);
         }
 
         public bool IsHoldInProgress { get; private set; }

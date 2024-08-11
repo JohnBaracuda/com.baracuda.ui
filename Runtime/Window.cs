@@ -1,5 +1,4 @@
-﻿using Baracuda.Bedrock.Injection;
-using Baracuda.Utilities;
+﻿using Baracuda.Utilities;
 using DG.Tweening;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -15,13 +14,14 @@ namespace Baracuda.UI
         [SerializeField] private UIGroup group = UIGroup.Menu;
         [SerializeField] [Required] private Canvas canvas;
         [SerializeField] [Required] private CanvasGroup canvasGroup;
+        [SerializeField] private float defaultFadeInDuration = .3f;
+        [SerializeField] private float defaultFadeOutDuration = .3f;
 
         public Canvas Canvas => canvas;
         protected CanvasGroup CanvasGroup => canvasGroup;
 
         protected virtual void Awake()
         {
-            Inject.Dependencies(this, false);
             CanvasGroup.alpha = 0;
         }
 
@@ -41,7 +41,7 @@ namespace Baracuda.UI
             this.DOKill();
             this.SetActive(true);
             var sequence = DOTween.Sequence(this);
-            sequence.Append(CanvasGroup.DOFade(1, .3f));
+            sequence.Append(CanvasGroup.DOFade(1, defaultFadeInDuration));
             return sequence;
         }
 
@@ -49,7 +49,7 @@ namespace Baracuda.UI
         {
             this.DOKill();
             var sequence = DOTween.Sequence(this);
-            sequence.Append(CanvasGroup.DOFade(0, .3f));
+            sequence.Append(CanvasGroup.DOFade(0, defaultFadeOutDuration));
             sequence.AppendCallback(() =>
             {
                 Assert.IsNotNull(this);

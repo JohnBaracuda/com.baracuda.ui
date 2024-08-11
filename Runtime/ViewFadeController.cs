@@ -10,7 +10,7 @@ namespace Baracuda.UI
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private float fadeInDurationInSeconds = .3f;
         [SerializeField] private float fadeOutDurationInSeconds = .3f;
-        [SerializeField] private ValueAssetRO<bool> viewFadeEnabled;
+        [SerializeField] private BoolValueAsset viewFadeEnabled;
 
         private bool _isPointerEnter;
 
