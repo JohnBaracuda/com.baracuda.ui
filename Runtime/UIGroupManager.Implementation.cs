@@ -58,6 +58,9 @@ namespace Baracuda.UI
                 _background = Instantiate(settings.background);
                 _background.DontDestroyOnLoad();
                 _hasGroupBackground = true;
+#if UNITY_EDITOR
+                UnityEditor.SceneVisibilityManager.instance.Hide(_background.gameObject, true);
+#endif
             }
         }
 
