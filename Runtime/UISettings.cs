@@ -1,4 +1,4 @@
-﻿using Baracuda.Utilities.Collections;
+﻿using Baracuda.Bedrock.Collections;
 using UnityEngine;
 
 namespace Baracuda.UI

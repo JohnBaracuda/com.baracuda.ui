@@ -1,8 +1,8 @@
-﻿using Baracuda.Bedrock.Values;
+﻿using Baracuda.Bedrock.Utilities;
 using Baracuda.Serialization;
-using Baracuda.Utilities;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Baracuda.UI
@@ -11,7 +11,8 @@ namespace Baracuda.UI
     [RequireComponent(typeof(CanvasScaler))]
     public class CanvasScaleController : MonoBehaviour
     {
-        [SerializeField] [Required] private FloatValueAsset canvasScaleFactorAsset;
+        [FormerlySerializedAs("canvasScaleFactorAsset")] [SerializeField] [Required]
+        private SaveDataFloat canvasScaleFactor;
         [SerializeField] [Required] private CanvasScaler canvasScaler;
 
         private const float MinScaleFactor = .1f;
@@ -26,17 +27,17 @@ namespace Baracuda.UI
         {
 #if UNITY_EDITOR
             canvasScaler ??= GetComponent<CanvasScaler>();
-            if (canvasScaleFactorAsset == null)
+            if (canvasScaleFactor == null)
             {
                 Debug.LogWarning("UI", "Canvas scale factor asset is null!", this);
                 return;
             }
 #endif
 
-            canvasScaleFactorAsset.Changed += UpdateCanvasScaleFactor;
+            canvasScaleFactor.Changed += UpdateCanvasScaleFactor;
             if (FileSystem.IsInitialized)
             {
-                UpdateCanvasScaleFactor(canvasScaleFactorAsset.Value);
+                UpdateCanvasScaleFactor(canvasScaleFactor.Value);
             }
         }
 
@@ -44,13 +45,13 @@ namespace Baracuda.UI
         {
 #if UNITY_EDITOR
             canvasScaler ??= GetComponent<CanvasScaler>();
-            if (canvasScaleFactorAsset == null)
+            if (canvasScaleFactor == null)
             {
                 Debug.LogWarning("UI", $"Canvas scale factor asset of {gameObject.name} is null!", this);
                 return;
             }
 #endif
-            canvasScaleFactorAsset.Changed -= UpdateCanvasScaleFactor;
+            canvasScaleFactor.Changed -= UpdateCanvasScaleFactor;
         }
 
         private void UpdateCanvasScaleFactor(float scaleFactor)

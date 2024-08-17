@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Linq;
+using Baracuda.Bedrock.Collections;
 using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.Services;
+using Baracuda.Bedrock.Types;
+using Baracuda.Bedrock.Utilities;
 using Baracuda.UI.Mediator;
-using Baracuda.Utilities;
-using Baracuda.Utilities.Types;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;

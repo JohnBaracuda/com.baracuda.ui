@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using Baracuda.Bedrock.Collections;
 using Baracuda.Bedrock.Services;
-using Baracuda.Utilities.Collections;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Assertions;

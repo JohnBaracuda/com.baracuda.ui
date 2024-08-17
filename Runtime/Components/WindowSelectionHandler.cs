@@ -3,7 +3,7 @@ using System.Linq;
 using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.Bedrock.Services;
-using Baracuda.Utilities;
+using Baracuda.Bedrock.Utilities;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;

@@ -1,6 +1,6 @@
 ﻿using System.Linq;
-using Baracuda.Bedrock.Values;
-using Baracuda.Utilities;
+using Baracuda.Bedrock.Utilities;
+using Baracuda.Serialization;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Localization;
@@ -23,7 +23,7 @@ namespace Baracuda.UI
         [SerializeField] private bool saveSelection;
         [FormerlySerializedAs("saveAsset")]
         [ShowIf(nameof(saveSelection))]
-        [SerializeField] private StringValueAsset asset;
+        [SerializeField] private SaveDataString asset;
 
         public MultiSelection Selection { get; private set; }
 

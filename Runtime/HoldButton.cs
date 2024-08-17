@@ -1,8 +1,8 @@
 ﻿using System;
 using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.Services;
-using Baracuda.Utilities;
-using Baracuda.Utilities.Events;
+using Baracuda.Bedrock.Types;
+using Baracuda.Bedrock.Utilities;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -35,20 +35,20 @@ namespace Baracuda.UI
 
         public event Action HoldStarted
         {
-            add => _onHoldStarted.Add(value);
-            remove => _onHoldStarted.Remove(value);
+            add => _onHoldStarted.AddListener(value);
+            remove => _onHoldStarted.RemoveListener(value);
         }
 
         public event Action HoldCompleted
         {
-            add => _onHoldCompleted.Add(value);
-            remove => _onHoldCompleted.Remove(value);
+            add => _onHoldCompleted.AddListener(value);
+            remove => _onHoldCompleted.RemoveListener(value);
         }
 
         public event Action HoldCancelled
         {
-            add => _onHoldCancelled.Add(value);
-            remove => _onHoldCancelled.Remove(value);
+            add => _onHoldCancelled.AddListener(value);
+            remove => _onHoldCancelled.RemoveListener(value);
         }
 
         public event Action<float> HoldProgress

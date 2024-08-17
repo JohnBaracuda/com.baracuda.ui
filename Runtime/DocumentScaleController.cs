@@ -1,7 +1,8 @@
-﻿using Baracuda.Bedrock.Values;
-using Baracuda.Utilities;
+﻿using Baracuda.Bedrock.Utilities;
+using Baracuda.Serialization;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 
 namespace Baracuda.UI
@@ -9,7 +10,8 @@ namespace Baracuda.UI
     [RequireComponent(typeof(UIDocument))]
     public class DocumentScaleController : MonoBehaviour
     {
-        [SerializeField] [Required] private FloatValueAsset canvasScaleFactorAsset;
+        [FormerlySerializedAs("canvasScaleFactorAsset")] [SerializeField] [Required]
+        private SaveDataFloat canvasScaleFactor;
         [SerializeField] [Required] private UIDocument uiDocument;
 
         private const float MinScaleFactor = .1f;
@@ -22,13 +24,13 @@ namespace Baracuda.UI
 
         private void OnEnable()
         {
-            canvasScaleFactorAsset.Changed += UpdateCanvasScaleFactor;
-            UpdateCanvasScaleFactor(canvasScaleFactorAsset.Value);
+            canvasScaleFactor.Changed += UpdateCanvasScaleFactor;
+            UpdateCanvasScaleFactor(canvasScaleFactor.Value);
         }
 
         private void OnDisable()
         {
-            canvasScaleFactorAsset.Changed -= UpdateCanvasScaleFactor;
+            canvasScaleFactor.Changed -= UpdateCanvasScaleFactor;
         }
 
         private void UpdateCanvasScaleFactor(float scaleFactor)

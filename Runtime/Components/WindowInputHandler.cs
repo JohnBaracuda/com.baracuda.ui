@@ -1,6 +1,5 @@
 ﻿using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.Services;
-using Baracuda.Utilities.Types;
 using UnityEngine;
 
 namespace Baracuda.UI.Components

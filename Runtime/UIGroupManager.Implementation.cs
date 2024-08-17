@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Baracuda.Bedrock.Collections;
 using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.Odin;
 using Baracuda.Bedrock.Services;
+using Baracuda.Bedrock.Types;
+using Baracuda.Bedrock.Utilities;
 using Baracuda.UI.Components;
-using Baracuda.Utilities;
-using Baracuda.Utilities.Collections;
-using Baracuda.Utilities.Events;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UnityEngine;
@@ -771,6 +771,10 @@ namespace Baracuda.UI
             {
                 windowOpening.OnWindowOpening();
             }
+            if (monoBehaviour.TryGetComponent<Canvas>(out var canvas))
+            {
+                canvas.enabled = _visibilityBlocker.Count == 0;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -865,7 +869,7 @@ namespace Baracuda.UI
         private HashSet<Object> _backgroundBlocker = new();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void BlockBackgroundInternal(Object source)
+        private void BlockBackgroundInternal(Object source)
         {
             if (!_hasGroupBackground)
             {
@@ -876,7 +880,7 @@ namespace Baracuda.UI
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void UnblockBackgroundInternal(Object source)
+        private void UnblockBackgroundInternal(Object source)
         {
             if (!_hasGroupBackground)
             {
@@ -886,6 +890,42 @@ namespace Baracuda.UI
             if (_backgroundBlocker.Count == 0 && _uiStack.Count > 0)
             {
                 _background.Show();
+            }
+        }
+
+        #endregion
+
+
+        #region Visibility
+
+        [Debug]
+        private HashSet<Object> _visibilityBlocker = new();
+
+        private void BlockInternal(Object source)
+        {
+            if (_visibilityBlocker.Add(source) && _visibilityBlocker.Count == 1)
+            {
+                foreach (var window in Stack)
+                {
+                    if (window is MonoBehaviour monoBehaviour && monoBehaviour.TryGetComponent<Canvas>(out var canvas))
+                    {
+                        canvas.enabled = false;
+                    }
+                }
+            }
+        }
+
+        private void UnblockInternal(Object source)
+        {
+            if (_visibilityBlocker.Remove(source) && _visibilityBlocker.Count == 0)
+            {
+                foreach (var window in Stack)
+                {
+                    if (window is MonoBehaviour monoBehaviour && monoBehaviour.TryGetComponent<Canvas>(out var canvas))
+                    {
+                        canvas.enabled = true;
+                    }
+                }
             }
         }
 

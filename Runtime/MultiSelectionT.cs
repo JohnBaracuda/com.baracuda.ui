@@ -1,50 +1,53 @@
 ﻿using System;
 using System.Linq;
-using Baracuda.Bedrock.Values;
-using Baracuda.Utilities;
+using Baracuda.Bedrock.Utilities;
+using Baracuda.Serialization;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Serialization;
 
 namespace Baracuda.UI
 {
     [RequireComponent(typeof(MultiSelection))]
     public class MultiSelection<T> : MonoBehaviour where T : unmanaged, Enum
     {
-        [SerializeField] [Required] private SaveDataAsset<T> valueAsset;
+        [FormerlySerializedAs("value")]
+        [FormerlySerializedAs("valueAsset")]
+        [SerializeField] [Required] private SaveDataValueAsset<T> saveData;
 
         public MultiSelection Selection { get; private set; }
 
         public virtual T Value
         {
-            get => valueAsset.GetValue();
-            set => valueAsset.SetValue(value);
+            get => saveData.GetValue();
+            set => saveData.SetValue(value);
         }
 
         private bool _isInitialized;
 
         public void Start()
         {
-            var enumValues = EnumUtility<T>.GetValueArray();
+            var enumValues = EnumUtility.GetValueArray<T>();
             var entries = new SelectionEntry[enumValues.Length];
 
             var startEntry = default(SelectionEntry);
 
             for (var index = 0; index < enumValues.Length; index++)
             {
-                var value = enumValues[index];
+                var enumValue = enumValues[index];
 
                 var entry = new SelectionEntry
                 {
-                    SystemName = GetSystemName(value),
-                    EnumValue = EnumUtility<T>.ToInt(value),
-                    LocalizedName = GetLocalizedName(value),
+                    SystemName = GetSystemName(enumValue),
+                    EnumValue = EnumUtility.ToInt(enumValue),
+                    LocalizedName = GetLocalizedName(enumValue),
                     Index = index
                 };
 
                 entries[index] = entry;
 
-                if (EnumUtility<T>.Equals(Value, value))
+                if (Equals(Value, enumValue))
                 {
                     startEntry = entry;
                 }
@@ -55,18 +58,18 @@ namespace Baracuda.UI
             Selection.ValueChanged += OnValueChanged;
             OnValueChanged(startEntry);
 
-            valueAsset.Changed += UpdateDisplayedValue;
+            saveData.Changed += UpdateDisplayedSaveData;
         }
 
         private void OnDestroy()
         {
             Selection.ValueChanged -= OnValueChanged;
-            valueAsset.Changed -= UpdateDisplayedValue;
+            saveData.Changed -= UpdateDisplayedSaveData;
         }
 
-        private void UpdateDisplayedValue(T value)
+        private void UpdateDisplayedSaveData(T value)
         {
-            var entry = Selection.Entries.First(entry => entry.EnumValue == EnumUtility<T>.ToInt(value));
+            var entry = Selection.Entries.First(entry => entry.EnumValue == EnumUtility.ToInt(value));
             Selection.SelectElement(entry.Index);
         }
 
@@ -79,7 +82,7 @@ namespace Baracuda.UI
                 return;
             }
 
-            var entry = Selection.Entries.FirstOrDefault(entry => entry.EnumValue == EnumUtility<T>.ToInt(value));
+            var entry = Selection.Entries.FirstOrDefault(entry => entry.EnumValue == EnumUtility.ToInt(value));
             Selection.SelectElement(entry!.Index);
         }
 
@@ -106,7 +109,7 @@ namespace Baracuda.UI
 
         private void OnValueChanged(SelectionEntry selection)
         {
-            var value = EnumUtility<T>.FromInt(selection.EnumValue);
+            var value = EnumUtility.FromInt<T>(selection.EnumValue);
             Value = value;
         }
     }

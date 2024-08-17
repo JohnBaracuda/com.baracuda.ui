@@ -2,7 +2,7 @@
 using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.Odin;
 using Baracuda.Bedrock.Services;
-using Baracuda.Utilities.Events;
+using Baracuda.Bedrock.Types;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;

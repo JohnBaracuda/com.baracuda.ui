@@ -1,4 +1,4 @@
-using Baracuda.Utilities;
+using Baracuda.Bedrock.Utilities;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;

@@ -1,6 +1,6 @@
 ﻿using Baracuda.Bedrock.Odin;
-using Baracuda.Utilities;
-using Baracuda.Utilities.Types;
+using Baracuda.Bedrock.Timing;
+using Baracuda.Bedrock.Utilities;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.EventSystems;

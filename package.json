@@ -8,9 +8,8 @@
   "changelogUrl": "https://github.com/JohnBaracuda/com.baracuda.ui/blob/main/CHANGELOG.md",
   "licensesUrl": "https://github.com/JohnBaracuda/com.baracuda.ui/blob/main/LICENSE.md",
   "dependencies": {
-    "com.baracuda.utilities": "1.0.0",
-    "com.baracuda.debug": "1.0.0",
-    "com.baracuda.bedrock": "1.0.0"
+    "com.baracuda.bedrock": "1.0.0",
+    "com.baracuda.debug": "1.0.0"
   },
   "keywords": [
     "user interface",

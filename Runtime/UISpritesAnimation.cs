@@ -1,7 +1,8 @@
 ﻿using System;
 using Baracuda.Bedrock.PlayerLoop;
-using Baracuda.Utilities;
-using Baracuda.Utilities.Types;
+using Baracuda.Bedrock.Timing;
+using Baracuda.Bedrock.Types;
+using Baracuda.Bedrock.Utilities;
 using DG.Tweening;
 using Sirenix.OdinInspector;
 using UnityEngine;

@@ -1,6 +1,6 @@
 ﻿using Baracuda.Bedrock.PlayerLoop;
+using Baracuda.Bedrock.Utilities;
 using Baracuda.UI.Mediator;
-using Baracuda.Utilities;
 using DG.Tweening;
 using Sirenix.OdinInspector;
 using TMPro;

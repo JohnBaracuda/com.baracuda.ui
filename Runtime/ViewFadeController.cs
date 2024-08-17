@@ -1,4 +1,4 @@
-using Baracuda.Bedrock.Values;
+using Baracuda.Serialization;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -10,7 +10,7 @@ namespace Baracuda.UI
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private float fadeInDurationInSeconds = .3f;
         [SerializeField] private float fadeOutDurationInSeconds = .3f;
-        [SerializeField] private BoolValueAsset viewFadeEnabled;
+        [SerializeField] private SaveDataBool viewFadeEnabled;
 
         private bool _isPointerEnter;
 

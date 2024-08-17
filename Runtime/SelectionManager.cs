@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using Baracuda.Utilities;
+using Baracuda.Bedrock.Collections;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -35,8 +35,8 @@ namespace Baracuda.UI
         [PublicAPI]
         public event Action SelectionCleared
         {
-            add => _onSelectionCleared.Add(value);
-            remove => _onSelectionCleared.Remove(value);
+            add => _onSelectionCleared.AddListener(value);
+            remove => _onSelectionCleared.RemoveListener(value);
         }
 
         [PublicAPI]

@@ -24,6 +24,18 @@ namespace Baracuda.UI
             UnblockBackgroundInternal(source);
         }
 
+        [PublicAPI]
+        public void Block(Object source)
+        {
+            BlockInternal(source);
+        }
+
+        [PublicAPI]
+        public void Unblock(Object source)
+        {
+            UnblockInternal(source);
+        }
+
         /// <summary>
         ///     Triggered when the open sequence of a UI window starts.
         /// </summary>

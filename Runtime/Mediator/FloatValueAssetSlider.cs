@@ -1,9 +1,10 @@
 using System.Globalization;
-using Baracuda.Bedrock.Values;
-using Baracuda.Utilities;
+using Baracuda.Bedrock.Utilities;
+using Baracuda.Serialization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Baracuda.UI.Mediator
@@ -17,8 +18,11 @@ namespace Baracuda.UI.Mediator
         [SerializeField] private int minValue;
         [SerializeField] private int maxValue = 1;
         [SerializeField] private float conversionFactor = 1;
+        [FormerlySerializedAs("saveDataAsset")]
+        [FormerlySerializedAs("saveDataAssetT")]
+        [FormerlySerializedAs("valueAsset")]
         [Space]
-        [SerializeField] private FloatValueAsset valueAsset;
+        [SerializeField] private SaveDataFloat saveData;
         [Space]
         [SerializeField] private Slider slider;
         [SerializeField] private SelectedEvent selectedEvent;
@@ -31,9 +35,9 @@ namespace Baracuda.UI.Mediator
             slider.wholeNumbers = true;
             slider.minValue = minValue;
             slider.maxValue = maxValue;
-            slider.value = valueAsset.Value / conversionFactor;
+            slider.value = saveData.Value / conversionFactor;
             slider.onValueChanged.AddListener(OnSliderValueChanged);
-            valueTextField.text = (valueAsset.Value / conversionFactor).ToString(CultureInfo.InvariantCulture);
+            valueTextField.text = (saveData.Value / conversionFactor).ToString(CultureInfo.InvariantCulture);
             displayName.StringChanged += OnLocalizedDisplayNameChanged;
             selectedEvent.Selected += UpdateDescription;
         }
@@ -58,8 +62,8 @@ namespace Baracuda.UI.Mediator
                 return;
             }
 #endif
-            valueAsset.Value = sliderValue * conversionFactor;
-            valueTextField.text = (valueAsset.Value / conversionFactor).ToString(CultureInfo.InvariantCulture);
+            saveData.Value = sliderValue * conversionFactor;
+            valueTextField.text = (saveData.Value / conversionFactor).ToString(CultureInfo.InvariantCulture);
         }
 
         private void OnLocalizedDisplayNameChanged(string value)
