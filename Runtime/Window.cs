@@ -1,4 +1,5 @@
 ﻿using Baracuda.Bedrock.Utilities;
+using Baracuda.UI.Components;
 using DG.Tweening;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -16,6 +17,12 @@ namespace Baracuda.UI
         [SerializeField] [Required] private CanvasGroup canvasGroup;
         [SerializeField] private float defaultFadeInDuration = .3f;
         [SerializeField] private float defaultFadeOutDuration = .3f;
+        [SerializeField] private TransitionSettings transitionSettings = TransitionSettings.None;
+
+        public TransitionSettings GetTransitionSettings()
+        {
+            return transitionSettings;
+        }
 
         public Canvas Canvas => canvas;
         protected CanvasGroup CanvasGroup => canvasGroup;

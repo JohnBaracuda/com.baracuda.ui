@@ -8,7 +8,6 @@ using Baracuda.Bedrock.Odin;
 using Baracuda.Bedrock.Services;
 using Baracuda.Bedrock.Types;
 using Baracuda.Bedrock.Utilities;
-using Baracuda.UI.Components;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UnityEngine;
@@ -26,13 +25,11 @@ namespace Baracuda.UI
         [ReadonlyInspector]
         private List<IWindow> Stack => _uiStack.List;
 
-        [Debug]
         private UIGroup _group;
-        [Debug]
         private UIGroupSettings _settings;
-        [Debug]
-        private UIBackground _background;
         private bool _hasGroupBackground;
+        private readonly HashSet<Object> _visibilityBlocker = new();
+        private readonly HashSet<Object> _backgroundBlocker = new();
         private UIContainer _container;
         private Sequence _transitionSequence;
         private readonly PriorityQueue<(UICommand command, UniTaskCompletionSource<IWindow> completionSource)> _queue = new();
@@ -55,11 +52,11 @@ namespace Baracuda.UI
             _escapeDelegate = OnEscapePressed;
             if (settings.hasBackground && settings.background)
             {
-                _background = Instantiate(settings.background);
-                _background.DontDestroyOnLoad();
+                Background = Instantiate(settings.background);
+                Background.DontDestroyOnLoad();
                 _hasGroupBackground = true;
 #if UNITY_EDITOR
-                UnityEditor.SceneVisibilityManager.instance.Hide(_background.gameObject, true);
+                UnityEditor.SceneVisibilityManager.instance.Hide(Background.gameObject, true);
 #endif
             }
         }
@@ -83,6 +80,12 @@ namespace Baracuda.UI
                 ExecuteWindowFocusLossCallbacks(window);
                 _uiStack.Remove(window);
                 window.HideAsync(context).Complete(true);
+                ExecuteWindowClosedCallbacks(window);
+            }
+
+            if (_hasGroupBackground)
+            {
+                Background.Hide();
             }
         }
 
@@ -111,6 +114,10 @@ namespace Baracuda.UI
                         SetActive(window, false);
                     }
                     ResetEscapeForTransition();
+                    if (_hasGroupBackground)
+                    {
+                        Background.Hide();
+                    }
                     return;
                 }
 
@@ -134,6 +141,10 @@ namespace Baracuda.UI
 
                     await Task.WhenAll(tasks);
                     ResetEscapeForTransition();
+                    if (_hasGroupBackground)
+                    {
+                        Background.Hide();
+                    }
                     return;
                 }
 
@@ -284,8 +295,8 @@ namespace Baracuda.UI
             var window = command.Window ?? await _container.LoadAsync(command.WindowType);
             var previousWindow = _uiStack.Peek();
             var isFirstWindow = previousWindow == null;
-            var windowTransitionSettings = GetTransitionSettingsForWindow(window);
-            var previousWindowTransitionSettings = GetTransitionSettingsForWindow(previousWindow);
+            var windowTransitionSettings = window.GetTransitionSettings();
+            var previousWindowTransitionSettings = previousWindow?.GetTransitionSettings() ?? TransitionSettings.None;
             var hideUnderlyingUI = !isFirstWindow && (windowTransitionSettings & TransitionSettings.HideUnderlyingWindows) > 0;
             var completeTransitionsSequential = (windowTransitionSettings & TransitionSettings.CompleteTransitionsSequential) > 0;
             var hideOnFocusLoss = previousWindow != null && (previousWindowTransitionSettings & TransitionSettings.HideWhenLosingFocus) > 0;
@@ -356,8 +367,8 @@ namespace Baracuda.UI
             RemoveWindowFromStack(window);
 
             var refocusWindow = _uiStack.Peek();
-            var transitionSettings = GetTransitionSettingsForWindow(refocusWindow);
-            var wasWindowHidden = (GetTransitionSettingsForWindow(window) & TransitionSettings.HideUnderlyingWindows) != 0;
+            var transitionSettings = refocusWindow?.GetTransitionSettings() ?? TransitionSettings.None;
+            var wasWindowHidden = (window.GetTransitionSettings() & TransitionSettings.HideUnderlyingWindows) != 0;
             var showWindowAgain = refocusWindow != null && (wasWindowHidden || (transitionSettings & TransitionSettings.HideWhenLosingFocus) > 0);
 
             var context = UIContext.Create()
@@ -484,7 +495,7 @@ namespace Baracuda.UI
         {
             if (_hasGroupBackground && _uiStack.Count == 0 && _backgroundBlocker.Count <= 0)
             {
-                _background.Show();
+                Background.Show();
             }
 
             var previousFocusWindow = _uiStack.Peek();
@@ -507,7 +518,7 @@ namespace Baracuda.UI
         {
             if (_hasGroupBackground)
             {
-                _background.SetSortingOrder(SortingOrder);
+                Background.SetSortingOrder(SortingOrder);
             }
             for (var index = 0; index < _uiStack.List.Count; index++)
             {
@@ -579,7 +590,7 @@ namespace Baracuda.UI
 
             if (_hasGroupBackground && _uiStack.Count == 0)
             {
-                _background.Hide();
+                Background.Hide();
             }
 
             UpdateWindowSortingOrder();
@@ -612,43 +623,6 @@ namespace Baracuda.UI
             return false;
         }
 
-        public bool IsOrWillOpen<T>(IWindow instance) where T : MonoBehaviour, IWindow
-        {
-            var isOpen = IsOpen<T>(instance);
-            if (isOpen)
-            {
-                return true;
-            }
-
-            foreach (var (command, _) in _queue)
-            {
-                var isOpenCommand = command.CommandType is UICommandType.Open or UICommandType.Toggle;
-                if (isOpenCommand && instance == command.Window)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public bool IsOrWillOpen<T>() where T : MonoBehaviour, IWindow
-        {
-            var isOpen = IsOpen<T>();
-            if (isOpen)
-            {
-                return true;
-            }
-
-            foreach (var (command, _) in _queue)
-            {
-                if (command.CommandType is UICommandType.Open or UICommandType.Toggle)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         public bool IsCommandWindowOpen(UICommand command)
         {
             if (command.Window != null)
@@ -665,69 +639,6 @@ namespace Baracuda.UI
                 }
             }
 
-            return false;
-        }
-
-        #endregion
-
-
-        #region Is Or Will Close
-
-        public bool IsClosed<T>(IWindow instance) where T : MonoBehaviour, IWindow
-        {
-            if (instance != null)
-            {
-                return !_uiStack.Contains(instance);
-            }
-            return IsClosed<T>();
-        }
-
-        public bool IsClosed<T>() where T : MonoBehaviour, IWindow
-        {
-            foreach (var window in _uiStack)
-            {
-                if (window is T)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        public bool IsOrWillClose<T>(IWindow instance) where T : MonoBehaviour, IWindow
-        {
-            var isClosed = IsClosed<T>(instance);
-            if (isClosed)
-            {
-                return true;
-            }
-
-            foreach (var (command, _) in _queue)
-            {
-                var isCloseCommand = command.CommandType is UICommandType.Close or UICommandType.Toggle;
-                if (isCloseCommand && instance == command.Window)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public bool IsOrWillClose<T>() where T : MonoBehaviour, IWindow
-        {
-            var isClosed = IsClosed<T>();
-            if (isClosed)
-            {
-                return true;
-            }
-
-            foreach (var (command, _) in _queue)
-            {
-                if (command.CommandType is UICommandType.Close or UICommandType.Toggle)
-                {
-                    return true;
-                }
-            }
             return false;
         }
 
@@ -865,9 +776,6 @@ namespace Baracuda.UI
 
         #region Background Blocking
 
-        [Debug]
-        private HashSet<Object> _backgroundBlocker = new();
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void BlockBackgroundInternal(Object source)
         {
@@ -876,7 +784,7 @@ namespace Baracuda.UI
                 return;
             }
             _backgroundBlocker.Add(source);
-            _background.Hide();
+            Background.Hide();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -889,7 +797,7 @@ namespace Baracuda.UI
             _backgroundBlocker.Remove(source);
             if (_backgroundBlocker.Count == 0 && _uiStack.Count > 0)
             {
-                _background.Show();
+                Background.Show();
             }
         }
 
@@ -897,9 +805,6 @@ namespace Baracuda.UI
 
 
         #region Visibility
-
-        [Debug]
-        private HashSet<Object> _visibilityBlocker = new();
 
         private void BlockInternal(Object source)
         {
@@ -938,22 +843,6 @@ namespace Baracuda.UI
         private bool AreEqual(IWindow rhs, IWindow lhs)
         {
             return EqualityComparer<IWindow>.Default.Equals(rhs, lhs);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private TransitionSettings GetTransitionSettingsForWindow(IWindow window)
-        {
-            if (window is IWindowTransitionSettings transitionSettings)
-            {
-                return transitionSettings.TransitionSettings;
-            }
-
-            if (window is MonoBehaviour monoBehaviour && monoBehaviour.TryGetComponent(out transitionSettings))
-            {
-                return transitionSettings.TransitionSettings;
-            }
-
-            return TransitionSettings.None;
         }
 
         private void SetActive(IWindow window, bool value)

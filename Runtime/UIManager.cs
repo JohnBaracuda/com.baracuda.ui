@@ -95,29 +95,6 @@ namespace Baracuda.UI
         }
 
         /// <summary>
-        ///     Checks if any instance of a specified window type is open or will be opened soon.
-        /// </summary>
-        /// <typeparam name="T">The type of the window to check.</typeparam>
-        /// <returns>True if any instance of the specified window type is open or will be opened; otherwise, false.</returns>
-        [PublicAPI]
-        public static bool IsOrWillOpen<T>() where T : MonoBehaviour, IWindow
-        {
-            return Implementation.IsOrWillOpenInAnyGroup<T>();
-        }
-
-        /// <summary>
-        ///     Checks if a specific window instance is open or will be opened soon.
-        /// </summary>
-        /// <typeparam name="T">The type of the window to check.</typeparam>
-        /// <param name="instance">The window instance to check.</param>
-        /// <returns>True if the specified window instance is open or will be opened; otherwise, false.</returns>
-        [PublicAPI]
-        public static bool IsOrWillOpen<T>(T instance) where T : MonoBehaviour, IWindow
-        {
-            return Implementation.IsOrWillOpenInAnyGroup(instance);
-        }
-
-        /// <summary>
         ///     Checks if any instance of a specified window type is closed.
         /// </summary>
         /// <typeparam name="T">The type of the window to check.</typeparam>
@@ -125,7 +102,7 @@ namespace Baracuda.UI
         [PublicAPI]
         public static bool IsClosed<T>() where T : MonoBehaviour, IWindow
         {
-            return Implementation.IsClosedInAllGroups<T>();
+            return !Implementation.IsOpenInAnyGroup<T>();
         }
 
         /// <summary>
@@ -137,30 +114,7 @@ namespace Baracuda.UI
         [PublicAPI]
         public static bool IsClosed<T>(T instance) where T : MonoBehaviour, IWindow
         {
-            return Implementation.IsClosedInAllGroups(instance);
-        }
-
-        /// <summary>
-        ///     Checks if any instance of a specified window type is closed or will be closed soon.
-        /// </summary>
-        /// <typeparam name="T">The type of the window to check.</typeparam>
-        /// <returns>True if any instance of the specified window type is closed or will be closed; otherwise, false.</returns>
-        [PublicAPI]
-        public static bool IsOrWillClose<T>() where T : MonoBehaviour, IWindow
-        {
-            return Implementation.IsOrWillCloseInAnyGroup<T>();
-        }
-
-        /// <summary>
-        ///     Checks if a specific window instance is closed or will be closed soon.
-        /// </summary>
-        /// <typeparam name="T">The type of the window to check.</typeparam>
-        /// <param name="instance">The window instance to check.</param>
-        /// <returns>True if the specified window instance is closed or will be closed; otherwise, false.</returns>
-        [PublicAPI]
-        public static bool IsOrWillClose<T>(T instance) where T : MonoBehaviour, IWindow
-        {
-            return Implementation.IsOrWillCloseInAnyGroup(instance);
+            return !Implementation.IsOpenInAnyGroup(instance);
         }
 
         /// <summary>

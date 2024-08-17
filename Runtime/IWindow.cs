@@ -33,5 +33,14 @@ namespace Baracuda.UI
         /// </summary>
         /// <returns>The default UIGroupReference for the window.</returns>
         UIGroup GetDefaultGroup();
+
+        /// <summary>
+        ///     Optional override to determine specific transition settings for the Window.
+        /// </summary>
+        /// <returns></returns>
+        public TransitionSettings GetTransitionSettings()
+        {
+            return TransitionSettings.None;
+        }
     }
 }

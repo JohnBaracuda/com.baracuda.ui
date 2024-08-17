@@ -1,6 +1,6 @@
 {
   "name": "com.baracuda.ui",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "displayName": "UI",
   "description": "UI abstraction system for dynamic element loading, asynchronous transitions, and a stack system for seamless input and layer control.",
   "unity": "2021.3",
@@ -8,7 +8,7 @@
   "changelogUrl": "https://github.com/JohnBaracuda/com.baracuda.ui/blob/main/CHANGELOG.md",
   "licensesUrl": "https://github.com/JohnBaracuda/com.baracuda.ui/blob/main/LICENSE.md",
   "dependencies": {
-    "com.baracuda.bedrock": "1.0.0",
+    "com.baracuda.bedrock": "2.0.0",
     "com.baracuda.debug": "1.0.0"
   },
   "keywords": [

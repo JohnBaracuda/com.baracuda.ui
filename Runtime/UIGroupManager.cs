@@ -10,7 +10,7 @@ namespace Baracuda.UI
     public partial class UIGroupManager : MonoBehaviour
     {
         [PublicAPI]
-        public UIBackground Background => _background;
+        public UIBackground Background { get; private set; }
 
         [PublicAPI]
         public void BlockBackground(Object source)
