@@ -1,6 +1,6 @@
 ﻿using Baracuda.Bedrock.Utilities;
 using Baracuda.Serialization;
-using Sirenix.OdinInspector;
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.UIElements;
 

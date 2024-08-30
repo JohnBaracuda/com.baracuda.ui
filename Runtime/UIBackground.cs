@@ -1,6 +1,6 @@
 ﻿using Baracuda.Bedrock.Utilities;
 using DG.Tweening;
-using Sirenix.OdinInspector;
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.UI;
 

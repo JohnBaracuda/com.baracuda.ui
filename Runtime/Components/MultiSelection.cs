@@ -3,14 +3,14 @@ using System.Linq;
 using Baracuda.Bedrock.Collections;
 using Baracuda.Bedrock.Input;
 using Baracuda.Bedrock.Services;
-using Baracuda.Bedrock.Types;
 using Baracuda.Bedrock.Utilities;
-using Sirenix.OdinInspector;
+using NaughtyAttributes;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Image = UnityEngine.UI.Image;
+using Index = Baracuda.Bedrock.Types.Index;
 
 namespace Baracuda.UI.Components
 {
@@ -39,7 +39,7 @@ namespace Baracuda.UI.Components
 
         #region Fields
 
-        private Loop _index;
+        private Index _index;
 
         #endregion
 
@@ -92,7 +92,7 @@ namespace Baracuda.UI.Components
             AllowWrapping = allowWrapping;
             Entries = entries;
             startEntry ??= Entries.First();
-            _index = Loop.Create(startEntry.Index, Entries);
+            _index = Bedrock.Types.Index.Create(startEntry.Index, Entries);
             nextSelectGraphic.GetOrAddComponent<PointerEvents>().PointerDown += OnNextPressed;
             previousSelectGraphic.GetOrAddComponent<PointerEvents>().PointerDown += OnPreviousPressed;
 

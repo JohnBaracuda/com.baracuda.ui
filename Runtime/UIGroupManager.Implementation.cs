@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Baracuda.Bedrock.Collections;
 using Baracuda.Bedrock.Input;
-using Baracuda.Bedrock.Odin;
+using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.Bedrock.Services;
 using Baracuda.Bedrock.Types;
 using Baracuda.Bedrock.Utilities;
@@ -22,7 +22,6 @@ namespace Baracuda.UI
     {
         #region Fields
 
-        [ReadonlyInspector]
         private List<IWindow> Stack => _uiStack.List;
 
         private UIGroup _group;
@@ -795,7 +794,7 @@ namespace Baracuda.UI
                 return;
             }
             _backgroundBlocker.Remove(source);
-            if (_backgroundBlocker.Count == 0 && _uiStack.Count > 0)
+            if (_backgroundBlocker.Count == 0 && _uiStack.Count > 0 && !Gameloop.IsQuitting)
             {
                 Background.Show();
             }

@@ -1,12 +1,12 @@
 ﻿using System;
 using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.Bedrock.Timing;
-using Baracuda.Bedrock.Types;
 using Baracuda.Bedrock.Utilities;
 using DG.Tweening;
-using Sirenix.OdinInspector;
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.UI;
+using Index = Baracuda.Bedrock.Types.Index;
 
 namespace Baracuda.UI.Components
 {
@@ -24,21 +24,27 @@ namespace Baracuda.UI.Components
         [SerializeField] private Image image;
 
         private ScaledTimer _scaledTimer;
-        private Loop _loop;
+        private Index _index;
         private Action _update;
         private TweenCallback _onComplete;
         private float _updateInterval;
         private Color _playColor;
+        private bool _isInitialized;
 
         public bool IsPlaying { get; private set; }
 
-        private void Awake()
+        private void Initialize()
         {
+            if (_isInitialized)
+            {
+                return;
+            }
+            _isInitialized = true;
             _playColor = playColor;
-            _loop = Loop.Create(animationData.Sprites);
+            _index = Index.Create(animationData.Sprites);
             if (randomizeStart)
             {
-                _loop.Value = RandomUtility.Int(animationData.Sprites.Length - 1);
+                _index.Value = RandomUtility.Int(animationData.Sprites.Length - 1);
             }
 
             _update = OnUpdate;
@@ -48,6 +54,11 @@ namespace Baracuda.UI.Components
             {
                 Play();
             }
+        }
+
+        private void Awake()
+        {
+            Initialize();
         }
 
         private void OnValidate()
@@ -72,6 +83,7 @@ namespace Baracuda.UI.Components
                 return;
             }
 
+            Initialize();
             IsPlaying = true;
             image.DOComplete(true);
             image.DOColor(_playColor, fadeInTime).SetEase(Ease.InOutSine);
@@ -115,7 +127,7 @@ namespace Baracuda.UI.Components
             }
 
             _scaledTimer = ScaledTimer.FromSeconds(_updateInterval);
-            image.sprite = animationData.Sprites[_loop++];
+            image.sprite = animationData.Sprites[_index++];
         }
     }
 }

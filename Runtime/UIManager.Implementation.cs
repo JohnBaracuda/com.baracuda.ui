@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Baracuda.Bedrock.Collections;
+using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.Bedrock.Services;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -56,6 +57,10 @@ namespace Baracuda.UI
 
         private async UniTask<IWindow> ProcessCommandInternal(UICommand command)
         {
+            if (Gameloop.IsQuitting)
+            {
+                return null;
+            }
             return command.CommandType switch
             {
                 UICommandType.Load => await ProcessLoadCommandInternal(command),

@@ -1,7 +1,6 @@
-﻿using Baracuda.Bedrock.Odin;
-using Baracuda.Bedrock.Timing;
+﻿using Baracuda.Bedrock.Timing;
 using Baracuda.Bedrock.Utilities;
-using Sirenix.OdinInspector;
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -25,13 +24,9 @@ namespace Baracuda.UI.Components
         [SerializeField] [Required] private Scrollbar scrollbar;
         [SerializeField] [Required] private UISpritesAnimation noiseAnimation;
 
-        [Debug]
         private bool _isSelected;
-        [Debug]
         private bool _isHovered;
-        [Debug]
         private UnscaledTimer _lastScrollTimer;
-        [Debug]
         private Color _targetColor;
 
         private void OnValidate()

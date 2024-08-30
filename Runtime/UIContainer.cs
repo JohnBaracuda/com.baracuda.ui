@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Baracuda.Bedrock.Collections;
-using Baracuda.Bedrock.Odin;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -14,17 +13,11 @@ namespace Baracuda.UI
     {
         #region Fields
 
-        [ReadonlyInspector]
         private readonly Dictionary<Type, IWindow> _instances = new();
-        [ReadonlyInspector]
         private readonly Dictionary<Type, Func<IWindow>> _provider = new();
-        [ReadonlyInspector]
         private readonly Dictionary<Type, Action<MonoBehaviour>> _disposer = new();
-        [ReadonlyInspector]
         private readonly Dictionary<Type, Func<Task<IWindow>>> _asyncProvider = new();
-        [ReadonlyInspector]
         private readonly Dictionary<Type, Action<MonoBehaviour>> _asyncDisposer = new();
-        [ReadonlyInspector]
         private readonly HashSet<Type> _asyncLocks = new();
 
         #endregion

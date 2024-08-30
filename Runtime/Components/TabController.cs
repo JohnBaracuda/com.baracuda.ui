@@ -24,7 +24,7 @@ namespace Baracuda.UI.Components
             public Tab tab;
         }
 
-        private DynamicLoop _tabIndex;
+        private DynamicIndex _tabIndex;
         private bool _isInitialized;
 
         private Tab GetTabByIndex(int index)
@@ -139,7 +139,7 @@ namespace Baracuda.UI.Components
                 tab.FadeOut().Complete(true);
             }
 
-            _tabIndex = DynamicLoop.Create(tabs);
+            _tabIndex = DynamicIndex.Create(tabs);
 
             var currentTab = GetTabByIndex(_tabIndex);
             currentTab.FadeIn().Complete(true);

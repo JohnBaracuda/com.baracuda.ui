@@ -1,7 +1,7 @@
 ﻿using Baracuda.Bedrock.Utilities;
 using Baracuda.UI.Components;
 using DG.Tweening;
-using Sirenix.OdinInspector;
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Assertions;
 

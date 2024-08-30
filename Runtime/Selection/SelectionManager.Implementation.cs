@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Baracuda.Bedrock.Input;
-using Baracuda.Bedrock.Odin;
 using Baracuda.Bedrock.Services;
 using Baracuda.Bedrock.Types;
 using Baracuda.UI.Components;
@@ -18,7 +17,7 @@ namespace Baracuda.UI.Selection
         private readonly Broadcast<Selectable> _onSelectionChanged = new();
         private readonly Broadcast _onSelectionCleared = new();
 
-        [Debug] private GameObject _lastEventSystemSelection;
+        private GameObject _lastEventSystemSelection;
 
         private readonly HashSet<object> _clearSelectionOnMouseMovementProvider = new();
         private readonly HashSet<object> _clearSelectionOnMouseMovementBlocker = new();

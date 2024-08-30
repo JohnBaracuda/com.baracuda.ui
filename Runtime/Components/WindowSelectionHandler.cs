@@ -6,7 +6,7 @@ using Baracuda.Bedrock.Services;
 using Baracuda.Bedrock.Utilities;
 using Baracuda.UI.Selection;
 using Cysharp.Threading.Tasks;
-using Sirenix.OdinInspector;
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;

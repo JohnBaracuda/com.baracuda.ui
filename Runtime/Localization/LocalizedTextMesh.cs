@@ -1,5 +1,5 @@
 using Baracuda.Bedrock.Utilities;
-using Sirenix.OdinInspector;
+using NaughtyAttributes;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Localization;

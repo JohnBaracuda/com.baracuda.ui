@@ -1,6 +1,6 @@
 ﻿using DG.Tweening;
 using JetBrains.Annotations;
-using Sirenix.OdinInspector;
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,7 +11,6 @@ namespace Baracuda.UI.Components
     [AddComponentMenu("UI/Tab")]
     public class Tab : MonoBehaviour
     {
-        [ChildGameObjectsOnly]
         [SerializeField] [Required] private Selectable firstElement;
         [SerializeField] [Required] private CanvasGroup canvasGroup;
 

@@ -1,7 +1,7 @@
 ﻿using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.Bedrock.Services;
 using Baracuda.UI.Selection;
-using Sirenix.OdinInspector;
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;

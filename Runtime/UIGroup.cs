@@ -39,7 +39,7 @@ namespace Baracuda.UI
         [BurstDiscard]
         public static UIGroup Create(string name)
         {
-            var value = name.ComputeFNV1aHash();
+            var value = name.ComputeFnv1AHash();
             var key = new UIGroup(value);
             Registry.AddKey(name, value);
             return key;

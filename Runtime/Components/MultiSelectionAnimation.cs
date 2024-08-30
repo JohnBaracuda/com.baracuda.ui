@@ -1,7 +1,7 @@
 ﻿using Baracuda.Bedrock.PlayerLoop;
 using Baracuda.Bedrock.Utilities;
 using DG.Tweening;
-using Sirenix.OdinInspector;
+using NaughtyAttributes;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
