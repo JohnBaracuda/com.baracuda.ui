@@ -1,5 +1,5 @@
-﻿using Baracuda.Bedrock.Services;
-using Baracuda.UI.Selection;
+﻿using Baracuda.UI.Selection;
+using Baracuda.Utility.Services;
 using UnityEngine;
 
 namespace Baracuda.UI.Components

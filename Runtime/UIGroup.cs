@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Baracuda.Bedrock.Collections;
-using Baracuda.Bedrock.Utilities;
+using Baracuda.Utility.Collections;
+using Baracuda.Utility.Utilities;
 using Unity.Burst;
 using UnityEngine;
 

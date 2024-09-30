@@ -82,8 +82,8 @@ namespace Baracuda.UI
         [PublicAPI]
         public event Action<IWindow, IWindow> TransitionStarted
         {
-            add => _transitionStarted.Add(value);
-            remove => _transitionStarted.Remove(value);
+            add => _transitionStarted.AddListener(value);
+            remove => _transitionStarted.RemoveListener(value);
         }
 
         /// <summary>
@@ -92,8 +92,8 @@ namespace Baracuda.UI
         [PublicAPI]
         public event Action<IWindow, IWindow> TransitionCompleted
         {
-            add => _transitionCompleted.Add(value);
-            remove => _transitionCompleted.Remove(value);
+            add => _transitionCompleted.AddListener(value);
+            remove => _transitionCompleted.RemoveListener(value);
         }
     }
 }

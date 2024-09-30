@@ -1,5 +1,5 @@
-﻿using Baracuda.Bedrock.Input;
-using Baracuda.Bedrock.Services;
+﻿using Baracuda.Utility.Input;
+using Baracuda.Utility.Services;
 using UnityEngine;
 
 namespace Baracuda.UI.Components

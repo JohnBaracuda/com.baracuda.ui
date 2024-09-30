@@ -1,5 +1,5 @@
-﻿using Baracuda.Bedrock.PlayerLoop;
-using Baracuda.Bedrock.Utilities;
+﻿using Baracuda.Utility.PlayerLoop;
+using Baracuda.Utility.Utilities;
 using DG.Tweening;
 using NaughtyAttributes;
 using TMPro;

@@ -123,9 +123,9 @@ namespace Baracuda.UI
         /// </summary>
         [PublicAPI]
         [MustUseReturnValue]
-        public new UICommand<T> WithImmediateExecution()
+        public UICommand<T> WithImmediateExecution(bool executeImmediate = true)
         {
-            ExecuteImmediate = true;
+            ExecuteImmediate = executeImmediate;
             return this;
         }
 

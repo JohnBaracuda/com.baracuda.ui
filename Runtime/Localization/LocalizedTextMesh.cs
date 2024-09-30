@@ -1,4 +1,4 @@
-using Baracuda.Bedrock.Utilities;
+using Baracuda.Utility.Utilities;
 using NaughtyAttributes;
 using TMPro;
 using UnityEngine;

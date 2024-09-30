@@ -1,5 +1,5 @@
 ﻿using System;
-using Baracuda.Bedrock.Types;
+using Baracuda.Utility.Types;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;

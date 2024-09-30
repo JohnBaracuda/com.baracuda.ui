@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
-using Baracuda.Bedrock.Input;
-using Baracuda.Bedrock.PlayerLoop;
-using Baracuda.Bedrock.Services;
-using Baracuda.Bedrock.Utilities;
 using Baracuda.UI.Selection;
+using Baracuda.Utility.Input;
+using Baracuda.Utility.PlayerLoop;
+using Baracuda.Utility.Services;
+using Baracuda.Utility.Utilities;
 using Cysharp.Threading.Tasks;
 using NaughtyAttributes;
 using UnityEngine;

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using Baracuda.Bedrock.Collections;
-using Baracuda.Bedrock.PlayerLoop;
-using Baracuda.Bedrock.Services;
+using Baracuda.Utility.Collections;
+using Baracuda.Utility.PlayerLoop;
+using Baracuda.Utility.Services;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Assertions;

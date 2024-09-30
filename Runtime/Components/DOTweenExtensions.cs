@@ -1,6 +1,6 @@
 using System;
 using System.Text;
-using Baracuda.Bedrock.PlayerLoop;
+using Baracuda.Utility.PlayerLoop;
 using DG.Tweening;
 using DG.Tweening.Core;
 using DG.Tweening.Plugins.Options;

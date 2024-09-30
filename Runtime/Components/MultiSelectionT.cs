@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
-using Baracuda.Bedrock.Utilities;
 using Baracuda.Serialization;
+using Baracuda.Utility.Utilities;
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Localization;

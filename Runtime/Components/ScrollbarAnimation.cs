@@ -1,5 +1,5 @@
-﻿using Baracuda.Bedrock.Timing;
-using Baracuda.Bedrock.Utilities;
+﻿using Baracuda.Utility.Timing;
+using Baracuda.Utility.Utilities;
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.EventSystems;

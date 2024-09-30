@@ -1,8 +1,8 @@
 ﻿using System.Linq;
-using Baracuda.Bedrock.Pools;
-using Baracuda.Bedrock.Services;
-using Baracuda.Bedrock.Utilities;
 using Baracuda.UI.Selection;
+using Baracuda.Utility.Pools;
+using Baracuda.Utility.Services;
+using Baracuda.Utility.Utilities;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;

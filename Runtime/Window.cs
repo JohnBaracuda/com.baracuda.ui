@@ -1,5 +1,5 @@
-﻿using Baracuda.Bedrock.Utilities;
-using Baracuda.UI.Components;
+﻿using Baracuda.UI.Components;
+using Baracuda.Utility.Utilities;
 using DG.Tweening;
 using NaughtyAttributes;
 using UnityEngine;

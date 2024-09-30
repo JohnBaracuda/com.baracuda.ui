@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using Baracuda.Bedrock.Input;
-using Baracuda.Bedrock.Services;
-using Baracuda.Bedrock.Types;
 using Baracuda.UI.Components;
+using Baracuda.Utility.Input;
+using Baracuda.Utility.Services;
+using Baracuda.Utility.Types;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;

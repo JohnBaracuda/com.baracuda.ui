@@ -1,12 +1,12 @@
 ﻿using System;
-using Baracuda.Bedrock.PlayerLoop;
-using Baracuda.Bedrock.Timing;
-using Baracuda.Bedrock.Utilities;
+using Baracuda.Utility.PlayerLoop;
+using Baracuda.Utility.Timing;
+using Baracuda.Utility.Utilities;
 using DG.Tweening;
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.UI;
-using Index = Baracuda.Bedrock.Types.Index;
+using Index = Baracuda.Utility.Types.Index;
 
 namespace Baracuda.UI.Components
 {

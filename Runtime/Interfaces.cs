@@ -1,4 +1,4 @@
-using Baracuda.Bedrock.Input;
+using Baracuda.Utility.Input;
 
 namespace Baracuda.UI
 {

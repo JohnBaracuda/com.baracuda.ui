@@ -1,6 +1,6 @@
 using System.Globalization;
-using Baracuda.Bedrock.Utilities;
 using Baracuda.Serialization;
+using Baracuda.Utility.Utilities;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Localization;

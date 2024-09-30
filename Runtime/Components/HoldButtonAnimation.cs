@@ -1,4 +1,4 @@
-﻿using Baracuda.Bedrock.PlayerLoop;
+﻿using Baracuda.Utility.PlayerLoop;
 using DG.Tweening;
 using NaughtyAttributes;
 using TMPro;
