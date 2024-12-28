@@ -2,7 +2,7 @@
 using JetBrains.Annotations;
 using NaughtyAttributes;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.Assertions;
 
 namespace Baracuda.UI.Components
 {
@@ -11,10 +11,8 @@ namespace Baracuda.UI.Components
     [AddComponentMenu("UI/Tab")]
     public class Tab : MonoBehaviour
     {
-        [SerializeField] [Required] private Selectable firstElement;
-        [SerializeField] [Required] private CanvasGroup canvasGroup;
-
-        public Selectable FirstElement => firstElement;
+        [ReadOnly]
+        [SerializeField] private CanvasGroup canvasGroup;
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -22,6 +20,11 @@ namespace Baracuda.UI.Components
             canvasGroup ??= GetComponent<CanvasGroup>();
         }
 #endif
+
+        private void Awake()
+        {
+            canvasGroup ??= GetComponent<CanvasGroup>();
+        }
 
         public virtual Tween FadeIn()
         {
@@ -31,6 +34,8 @@ namespace Baracuda.UI.Components
 
         public virtual Tween FadeOut()
         {
+            Assert.IsNotNull(canvasGroup);
+            Assert.IsNotNull(gameObject);
             return canvasGroup.DOFade(0, .2f).SetEase(Ease.InOutSine).OnComplete(() => gameObject.SetActive(false));
         }
     }

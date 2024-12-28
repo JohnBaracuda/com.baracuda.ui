@@ -1,5 +1,4 @@
-﻿using System;
-using Baracuda.Utility.PlayerLoop;
+﻿using Baracuda.Utility.PlayerLoop;
 using Baracuda.Utility.Timing;
 using Baracuda.Utility.Utilities;
 using DG.Tweening;
@@ -25,7 +24,6 @@ namespace Baracuda.UI.Components
 
         private ScaledTimer _scaledTimer;
         private Index _index;
-        private Action _update;
         private TweenCallback _onComplete;
         private float _updateInterval;
         private Color _playColor;
@@ -47,9 +45,7 @@ namespace Baracuda.UI.Components
                 _index.Value = RandomUtility.Int(animationData.Sprites.Length - 1);
             }
 
-            _update = OnUpdate;
             _updateInterval = 1f / framesPerSecond;
-            _onComplete = () => Gameloop.Update -= _update;
             if (autoPlay)
             {
                 Play();
@@ -68,6 +64,10 @@ namespace Baracuda.UI.Components
 
         public void SetAnimationColor(Color color, bool animate = true)
         {
+            if (Gameloop.IsQuitting)
+            {
+                return;
+            }
             _playColor = color;
             if (animate && IsPlaying)
             {
@@ -78,7 +78,7 @@ namespace Baracuda.UI.Components
 
         public void Play()
         {
-            if (IsPlaying || !enabled || Gameloop.IsQuitting)
+            if (IsPlaying || Gameloop.IsQuitting)
             {
                 return;
             }
@@ -87,7 +87,6 @@ namespace Baracuda.UI.Components
             IsPlaying = true;
             image.DOComplete(true);
             image.DOColor(_playColor, fadeInTime).SetEase(Ease.InOutSine);
-            Gameloop.Update += _update;
         }
 
         public void Stop()
@@ -109,8 +108,8 @@ namespace Baracuda.UI.Components
 
         private void OnDestroy()
         {
+            _isInitialized = true;
             Stop();
-            Gameloop.Update -= _update;
             if (Gameloop.IsQuitting)
             {
                 return;
@@ -119,7 +118,7 @@ namespace Baracuda.UI.Components
             image.DOKill(true);
         }
 
-        private void OnUpdate()
+        private void Update()
         {
             if (_scaledTimer.IsRunning)
             {

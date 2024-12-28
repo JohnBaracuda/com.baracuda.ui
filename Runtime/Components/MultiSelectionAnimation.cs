@@ -19,6 +19,8 @@ namespace Baracuda.UI.Components
         [Header("Buttons")]
         [SerializeField] private Color buttonDefaultColor = Color.white;
         [SerializeField] private Color buttonActiveColor = Color.white;
+        [SerializeField] private float buttonFocusScale = 1.1f;
+        [SerializeField] private float buttonColorDuration = .3f;
 
         [FormerlySerializedAs("selectionDefaultColor")]
         [Header("Selection")]
@@ -34,17 +36,15 @@ namespace Baracuda.UI.Components
 
         [Header("Components")]
         [SerializeField] [Required] private Image backgroundImage;
-
         [SerializeField] [Required] private TMP_Text selectionTextField;
         [SerializeField] [Required] private UISpritesAnimation noiseAnimation;
 
         [FormerlySerializedAs("dropdown")]
         [FormerlySerializedAs("option")]
         [SerializeField] [ReadOnly] private MultiSelection multi;
-
         [SerializeField] [Required] private Image nextGraphic;
         [SerializeField] [Required] private Image previousGraphic;
-
+        [SerializeField] private bool showIndexGraphic = true;
         private Image _indexTargetGraphic;
         private bool _isHover;
         private bool _isSelected;
@@ -100,6 +100,12 @@ namespace Baracuda.UI.Components
                 selectionIndexWidget.GetOrAddComponent<PointerEvents>().PointerEnter -= OnPointerEnter;
                 selectionIndexWidget.GetOrAddComponent<PointerEvents>().PointerExit -= OnPointerExit;
             }
+
+            _isHover = false;
+            _isSelected = false;
+            UpdateRepresentation();
+            backgroundImage.DOComplete();
+            selectionTextField.DOComplete();
         }
 
         private void OnDestroy()
@@ -121,8 +127,11 @@ namespace Baracuda.UI.Components
                 indexWidget.color = indexWidgetColor;
             }
 
-            _indexTargetGraphic = multi.IndexWidgets[entry.Index];
-            _indexTargetGraphic.color = indexWidgetActiveColor;
+            if (showIndexGraphic)
+            {
+                _indexTargetGraphic = multi.IndexWidgets[entry.Index];
+                _indexTargetGraphic.color = indexWidgetActiveColor;
+            }
         }
 
         private void OnPointerEnter(PointerEvents pointerEvents)
@@ -188,8 +197,9 @@ namespace Baracuda.UI.Components
             var target = pointerEvents.TargetGraphic;
             target.DOKill();
             var sequence = DOTween.Sequence(target);
-            sequence.Append(target.transform.DOScale(Vector3.one * 1.1f, .1f).SetEase(Ease.InOutSine));
-            sequence.Append(target.DOColor(buttonActiveColor, .3f).SetEase(Ease.InOutSine));
+            sequence.Append(target.transform.DOScale(Vector3.one * buttonFocusScale, .1f).SetEase(Ease.InOutSine));
+            sequence.Append(target.DOColor(buttonActiveColor, buttonColorDuration).SetEase(Ease.InOutSine));
+            sequence.AppendCallback(() => multi.UpdateButtonGraphics(buttonActiveColor));
         }
 
         private void OnNextHoverEnd(PointerEvents pointerEvents)
@@ -198,7 +208,8 @@ namespace Baracuda.UI.Components
             target.DOKill();
             var sequence = DOTween.Sequence(target);
             sequence.Append(target.transform.DOScale(Vector3.one, .1f).SetEase(Ease.InOutSine));
-            sequence.Append(target.DOColor(buttonDefaultColor, .3f).SetEase(Ease.InOutSine));
+            sequence.Append(target.DOColor(buttonDefaultColor, buttonColorDuration).SetEase(Ease.InOutSine));
+            sequence.AppendCallback(() => multi.UpdateButtonGraphics(buttonDefaultColor));
         }
 
         private void OnPreviousHoverStart(PointerEvents pointerEvents)
@@ -206,8 +217,9 @@ namespace Baracuda.UI.Components
             var target = pointerEvents.TargetGraphic;
             target.DOKill();
             var sequence = DOTween.Sequence(target);
-            sequence.Append(target.transform.DOScale(Vector3.one * 1.1f, .1f).SetEase(Ease.InOutSine));
-            sequence.Append(target.DOColor(buttonActiveColor, .3f).SetEase(Ease.InOutSine));
+            sequence.Append(target.transform.DOScale(Vector3.one * buttonFocusScale, .1f).SetEase(Ease.InOutSine));
+            sequence.Append(target.DOColor(buttonActiveColor, buttonColorDuration).SetEase(Ease.InOutSine));
+            sequence.AppendCallback(() => multi.UpdateButtonGraphics(buttonActiveColor));
         }
 
         private void OnPreviousHoverEnd(PointerEvents pointerEvents)
@@ -216,7 +228,8 @@ namespace Baracuda.UI.Components
             target.DOKill();
             var sequence = DOTween.Sequence(target);
             sequence.Append(target.transform.DOScale(Vector3.one, .1f).SetEase(Ease.InOutSine));
-            sequence.Append(target.DOColor(buttonDefaultColor, .3f).SetEase(Ease.InOutSine));
+            sequence.Append(target.DOColor(buttonDefaultColor, buttonColorDuration).SetEase(Ease.InOutSine));
+            sequence.AppendCallback(() => multi.UpdateButtonGraphics(buttonDefaultColor));
         }
 
         #endregion

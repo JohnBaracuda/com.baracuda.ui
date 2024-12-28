@@ -69,6 +69,10 @@ namespace Baracuda.UI
         public static void UnregisterWindow(IWindow window)
         {
             Container.Remove(window.GetType(), window);
+            foreach (var group in Implementation._groups.Values)
+            {
+                group.RemoveWindow(window);
+            }
         }
 
         /// <summary>
@@ -285,6 +289,12 @@ namespace Baracuda.UI
         /// </summary>
         [PublicAPI]
         public static UIGroupManager HUDGroup => GetGroupManagerFor(UIGroup.HUD);
+
+        /// <summary>
+        ///     Gets the UIGroupManager for the Overlay group.
+        /// </summary>
+        [PublicAPI]
+        public static UIGroupManager EffectGroup => GetGroupManagerFor(UIGroup.Effect);
 
         /// <summary>
         ///     Gets the UIGroupManager for the Menu group.

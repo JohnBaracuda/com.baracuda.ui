@@ -2,22 +2,26 @@
 using System.Linq;
 using Baracuda.Serialization;
 using Baracuda.Utility.Utilities;
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Serialization;
 
 namespace Baracuda.UI.Components
 {
     [RequireComponent(typeof(MultiSelection))]
-    public abstract class MultiSelection<T> : MonoBehaviour where T : unmanaged, Enum
+    public class MultiSelection<T> : MonoBehaviour where T : unmanaged, Enum
     {
-        protected abstract SaveData<T> SaveData { get; }
+        [FormerlySerializedAs("value")]
+        [FormerlySerializedAs("valueAsset")]
+        [SerializeField] [Required] private SaveDataAsset<T> saveData;
 
         public MultiSelection Selection { get; private set; }
 
         public virtual T Value
         {
-            get => SaveData.GetValue();
-            set => SaveData.SetValue(value);
+            get => saveData.GetValue();
+            set => saveData.SetValue(value);
         }
 
         private bool _isInitialized;
@@ -54,13 +58,13 @@ namespace Baracuda.UI.Components
             Selection.ValueChanged += OnValueChanged;
             OnValueChanged(startEntry);
 
-            SaveData.AddObserver(UpdateDisplayedSaveData);
+            saveData.Changed += UpdateDisplayedSaveData;
         }
 
         private void OnDestroy()
         {
             Selection.ValueChanged -= OnValueChanged;
-            SaveData.RemoveObserver(UpdateDisplayedSaveData);
+            saveData.Changed -= UpdateDisplayedSaveData;
         }
 
         private void UpdateDisplayedSaveData(T value)

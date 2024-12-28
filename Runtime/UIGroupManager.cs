@@ -1,7 +1,6 @@
 ﻿using System;
 using JetBrains.Annotations;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 // ReSharper disable SuspiciousTypeConversion.Global
 
@@ -13,25 +12,25 @@ namespace Baracuda.UI
         public UIBackground Background { get; private set; }
 
         [PublicAPI]
-        public void BlockBackground(Object source)
+        public void BlockBackground(object source)
         {
             BlockBackgroundInternal(source);
         }
 
         [PublicAPI]
-        public void UnblockBackground(Object source)
+        public void UnblockBackground(object source)
         {
             UnblockBackgroundInternal(source);
         }
 
         [PublicAPI]
-        public void Block(Object source)
+        public void Block(object source)
         {
             BlockInternal(source);
         }
 
         [PublicAPI]
-        public void Unblock(Object source)
+        public void Unblock(object source)
         {
             UnblockInternal(source);
         }

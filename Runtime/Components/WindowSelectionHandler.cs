@@ -16,7 +16,10 @@ namespace Baracuda.UI.Components
     public class WindowSelectionHandler : MonoBehaviour, IWindowFocus
     {
         [SerializeField] private bool forceSelectionOnGainFocus;
+        [SerializeField] private bool rememberSelection = true;
         [SerializeField] private bool autoSelectFirstGameObject = true;
+        [HideIf(nameof(autoSelectFirstGameObject))]
+        [SerializeField] private bool alwaysUseFirstSelected = false;
         [HideIf(nameof(autoSelectFirstGameObject))]
         [SerializeField] private Selectable firstSelected;
         [SerializeField] private Selectable[] selectables;
@@ -26,6 +29,22 @@ namespace Baracuda.UI.Components
         private Action _forceDeselectObject;
         private Action<Selectable> _cacheSelection;
         private GameObject _lastSelected;
+        private Selectable _selectableOnLostFocus;
+
+        private InputManager _inputManager;
+        private SelectionManager _selectionManager;
+
+        private void Awake()
+        {
+            ServiceLocator.Inject(ref _inputManager);
+            ServiceLocator.Inject(ref _selectionManager);
+        }
+
+        public void Configure(Selectable firstSelectable, Selectable[] allSelectables)
+        {
+            firstSelected = firstSelectable;
+            selectables = allSelectables;
+        }
 
         private void OnValidate()
         {
@@ -39,10 +58,9 @@ namespace Baracuda.UI.Components
                 return;
             }
 
-            var inputManager = ServiceLocator.Get<InputManager>();
-            inputManager.NavigationInputReceived -= _forceSelectObject;
-            inputManager.BecameControllerScheme -= _forceSelectObject;
-            inputManager.BecameDesktopScheme -= _forceDeselectObject;
+            _inputManager.NavigationInputReceived -= _forceSelectObject;
+            _inputManager.BecameControllerScheme -= _forceSelectObject;
+            _inputManager.BecameDesktopScheme -= _forceDeselectObject;
 
             var selectionManager = ServiceLocator.Get<SelectionManager>();
             selectionManager.SelectionChanged -= _cacheSelection;
@@ -52,21 +70,18 @@ namespace Baracuda.UI.Components
         {
             EnableSelectables();
 
-            var inputManager = ServiceLocator.Get<InputManager>();
-
             _forceSelectObject ??= ForceSelectObject;
             _forceDeselectObject ??= ForceDeselectObject;
             _cacheSelection ??= CacheSelection;
 
-            inputManager.NavigationInputReceived += _forceSelectObject;
-            inputManager.BecameControllerScheme += _forceSelectObject;
-            inputManager.BecameDesktopScheme += _forceDeselectObject;
+            _inputManager.NavigationInputReceived += _forceSelectObject;
+            _inputManager.BecameControllerScheme += _forceSelectObject;
+            _inputManager.BecameDesktopScheme += _forceDeselectObject;
 
-            var selectionManager = ServiceLocator.Get<SelectionManager>();
-            selectionManager.SelectionChanged += _cacheSelection;
+            _selectionManager.SelectionChanged += _cacheSelection;
 
-            var isGamepad = inputManager.IsGamepadScheme;
-            var isKeyNavigation = inputManager.InteractionMode == InteractionMode.NavigationInput;
+            var isGamepad = _inputManager.IsGamepadScheme;
+            var isKeyNavigation = _inputManager.InteractionMode == InteractionMode.NavigationInput;
             if (isGamepad || isKeyNavigation || forceSelectionOnGainFocus)
             {
                 ForceSelectObject();
@@ -74,19 +89,19 @@ namespace Baracuda.UI.Components
 
             if (dontLoseFocusOnMouseMovement)
             {
-                selectionManager.AddClearSelectionOnMouseMovementBlocker(this);
+                _selectionManager.AddClearSelectionOnMouseMovementBlocker(this);
             }
         }
 
         public void OnWindowLostFocus()
         {
+            _selectableOnLostFocus = _selectionManager.Selected;
+
             DisableSelectables();
 
-            var inputManager = ServiceLocator.Get<InputManager>();
-
-            inputManager.NavigationInputReceived -= _forceSelectObject;
-            inputManager.BecameControllerScheme -= _forceSelectObject;
-            inputManager.BecameDesktopScheme -= _forceDeselectObject;
+            _inputManager.NavigationInputReceived -= _forceSelectObject;
+            _inputManager.BecameControllerScheme -= _forceSelectObject;
+            _inputManager.BecameDesktopScheme -= _forceDeselectObject;
 
             var selectionManager = ServiceLocator.Get<SelectionManager>();
             selectionManager.SelectionChanged -= _cacheSelection;
@@ -103,6 +118,11 @@ namespace Baracuda.UI.Components
         private async UniTaskVoid ForceSelectObjectWithDelay()
         {
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
+            if (EventSystem.current.currentSelectedGameObject.IsActiveAnEnabled())
+            {
+                return;
+            }
+
             var objectToSelect = GetObjectToSelect();
 
             if (objectToSelect != null)
@@ -127,12 +147,20 @@ namespace Baracuda.UI.Components
 
         public GameObject GetObjectToSelect(bool ignoreActiveState = false)
         {
-            var selectionManager = ServiceLocator.Get<SelectionManager>();
+            if (rememberSelection && _selectableOnLostFocus.IsActiveInHierarchy())
+            {
+                return _selectableOnLostFocus.gameObject;
+            }
+
+            if (!autoSelectFirstGameObject && alwaysUseFirstSelected)
+            {
+                return firstSelected.gameObject;
+            }
 
             // Check if the currently selected object is already viable.
-            if (selectionManager.HasSelectable && selectionManager.Selected.IsActiveInHierarchy())
+            if (_selectionManager.HasSelectable && _selectionManager.Selected.IsActiveInHierarchy())
             {
-                var selectedObject = selectionManager.Selected;
+                var selectedObject = _selectionManager.Selected;
 
                 if (selectedObject.interactable)
                 {
@@ -148,13 +176,11 @@ namespace Baracuda.UI.Components
                 return _lastSelected;
             }
 
-            // Get a predetermined first selection object.
             if (!autoSelectFirstGameObject && firstSelected)
             {
                 return firstSelected.gameObject;
             }
 
-            // Try to return the first found selectable component.
             foreach (var selectable in selectables)
             {
                 if (selectable.IsActiveInHierarchy())

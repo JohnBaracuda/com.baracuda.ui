@@ -35,25 +35,25 @@ namespace Baracuda.UI.Components
 
         public event Action HoldStarted
         {
-            add => _onHoldStarted.AddListener(value);
+            add => _onHoldStarted.AddListenerNullChecked(value);
             remove => _onHoldStarted.RemoveListener(value);
         }
 
         public event Action HoldCompleted
         {
-            add => _onHoldCompleted.AddListener(value);
+            add => _onHoldCompleted.AddListenerNullChecked(value);
             remove => _onHoldCompleted.RemoveListener(value);
         }
 
         public event Action HoldCancelled
         {
-            add => _onHoldCancelled.AddListener(value);
+            add => _onHoldCancelled.AddListenerNullChecked(value);
             remove => _onHoldCancelled.RemoveListener(value);
         }
 
         public event Action<float> HoldProgress
         {
-            add => _onHoldProgress.AddListener(value);
+            add => _onHoldProgress.AddListenerNullChecked(value);
             remove => _onHoldProgress.RemoveListener(value);
         }
 

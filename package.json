@@ -1,6 +1,6 @@
 {
   "name": "com.baracuda.ui",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "displayName": "UI",
   "description": "UI abstraction system for dynamic element loading, asynchronous transitions, and a stack system for seamless input and layer control.",
   "unity": "2021.3",

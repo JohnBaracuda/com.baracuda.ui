@@ -92,5 +92,11 @@ namespace Baracuda.UI.Selection
         {
             return HasSelectable && Selected.GetComponents<Component>().Any(item => item == component);
         }
+
+        [PublicAPI]
+        public bool IsSelected(GameObject target)
+        {
+            return target != null && Selected?.gameObject == target;
+        }
     }
 }

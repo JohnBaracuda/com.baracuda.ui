@@ -11,5 +11,6 @@ namespace Baracuda.UI.Components
         public string Name => LocalizedName.GetLocalizedStringOrDefault(SystemName);
         public LocalizedString LocalizedName;
         public string SystemName;
+        public object BoxedValue;
     }
 }

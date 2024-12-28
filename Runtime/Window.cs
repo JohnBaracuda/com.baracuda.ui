@@ -9,7 +9,7 @@ namespace Baracuda.UI
 {
     [RequireComponent(typeof(Canvas))]
     [RequireComponent(typeof(CanvasGroup))]
-    [RequireComponent(typeof(CanvasScaleController))]
+    [RequireComponent(typeof(AutoCanvasScaler))]
     public abstract class Window : MonoBehaviour, IWindow
     {
         [SerializeField] private UIGroup group = UIGroup.Menu;

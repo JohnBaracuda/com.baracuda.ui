@@ -1,4 +1,5 @@
-﻿using Baracuda.Utility.Utilities;
+﻿using Baracuda.Utility.Collections;
+using Baracuda.Utility.Utilities;
 using DG.Tweening;
 using NaughtyAttributes;
 using UnityEngine;
@@ -16,12 +17,27 @@ namespace Baracuda.UI
         [SerializeField] [Required] private Image image;
         [SerializeField] [Required] private Canvas canvas;
 
+        private readonly ObservableHashSet<object> _showBackgroundSources = new();
+        private readonly ObservableHashSet<object> _blockBackgroundSources = new();
         private bool _isVisible;
 
         private void Awake()
         {
             image.color = image.color.WithAlpha(0);
-            _isVisible = false;
+            _isVisible = _blockBackgroundSources.IsEmpty && _showBackgroundSources.IsNotEmpty;
+            _showBackgroundSources.FirstAdded.AddListener(Evaluate);
+            _showBackgroundSources.LastRemoved.AddListener(Evaluate);
+            _blockBackgroundSources.FirstAdded.AddListener(Evaluate);
+            _blockBackgroundSources.LastRemoved.AddListener(Evaluate);
+        }
+
+        private void OnDestroy()
+        {
+            _showBackgroundSources.FirstAdded.RemoveListener(Evaluate);
+            _showBackgroundSources.LastRemoved.RemoveListener(Evaluate);
+            _blockBackgroundSources.FirstAdded.RemoveListener(Evaluate);
+            _blockBackgroundSources.LastRemoved.RemoveListener(Evaluate);
+            image.DOKill();
         }
 
         public void SetSortingOrder(int sortingOrder)
@@ -29,26 +45,45 @@ namespace Baracuda.UI
             canvas.sortingOrder = sortingOrder;
         }
 
-        public void Show()
+        public void Show(object source)
         {
-            if (_isVisible)
-            {
-                return;
-            }
-            _isVisible = true;
-            image.DOKill();
-            image.DOColor(color, fadeInDuration);
+            _showBackgroundSources.Add(source);
         }
 
-        public void Hide()
+        public void Hide(object source)
         {
-            if (!_isVisible)
+            _showBackgroundSources.Remove(source);
+        }
+
+        public void Block(object source)
+        {
+            _showBackgroundSources.Add(source);
+        }
+
+        public void UnBlock(object source)
+        {
+            _showBackgroundSources.Remove(source);
+        }
+
+        private void Evaluate()
+        {
+            var wasVisible = _isVisible;
+            _isVisible = _blockBackgroundSources.IsEmpty && _showBackgroundSources.IsNotEmpty;
+            if (wasVisible == _isVisible)
             {
                 return;
             }
-            _isVisible = false;
-            image.DOKill();
-            image.DOColor(Color.clear, fadeOutDuration);
+
+            if (_isVisible)
+            {
+                image.DOKill();
+                image.DOColor(color, fadeInDuration);
+            }
+            else
+            {
+                image.DOKill();
+                image.DOColor(Color.clear, fadeOutDuration);
+            }
         }
     }
 }

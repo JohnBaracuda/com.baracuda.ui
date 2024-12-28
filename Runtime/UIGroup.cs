@@ -22,6 +22,11 @@ namespace Baracuda.UI
         public static readonly UIGroup HUD = Create(nameof(HUD));
 
         /// <summary>
+        ///     Predefined UI group for Effect elements.
+        /// </summary>
+        public static readonly UIGroup Effect = Create(nameof(Effect));
+
+        /// <summary>
         ///     Predefined UI group for Menu elements.
         /// </summary>
         public static readonly UIGroup Menu = Create(nameof(Menu));

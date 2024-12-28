@@ -10,5 +10,28 @@ namespace Baracuda.UI.Localization
         {
             return localizedString is null || localizedString.IsEmpty ? fallback : localizedString.GetLocalizedString();
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void AddObserver(this LocalizedString localizedString, LocalizedString.ChangeHandler observer, string fallback = "MISSING")
+        {
+            if (localizedString != null)
+            {
+                localizedString.StringChanged += observer;
+                observer(GetLocalizedStringOrDefault(localizedString, fallback));
+            }
+            else
+            {
+                observer(fallback);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void RemoveObserver(this LocalizedString localizedString, LocalizedString.ChangeHandler observer)
+        {
+            if (localizedString != null)
+            {
+                localizedString.StringChanged -= observer;
+            }
+        }
     }
 }

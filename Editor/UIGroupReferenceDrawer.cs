@@ -8,24 +8,20 @@ namespace Baracuda.UI.Editor
     public class UIGroupReferenceDrawer : UnityEditor.PropertyDrawer
     {
         private string[] _options;
-        private int _selectedIndex = -1;
 
         public override void OnGUI(Rect position, UnityEditor.SerializedProperty property, GUIContent label)
         {
             _options ??= UIGroup.Registry.Keys.Values.ToArray();
             var valueProperty = property.FindPropertyRelative("value");
 
-            if (_selectedIndex == -1)
-            {
-                _selectedIndex = KeyToIndex(valueProperty.intValue);
-            }
+            var selectedIndex = KeyToIndex(valueProperty.intValue);
 
-            var lastIndex = _selectedIndex;
-            _selectedIndex = UnityEditor.EditorGUI.Popup(position, _selectedIndex, _options);
+            var lastIndex = selectedIndex;
+            selectedIndex = UnityEditor.EditorGUI.Popup(position, selectedIndex, _options);
 
-            if (lastIndex != _selectedIndex)
+            if (lastIndex != selectedIndex)
             {
-                valueProperty.intValue = IndexToKey(_selectedIndex);
+                valueProperty.intValue = IndexToKey(selectedIndex);
                 valueProperty.serializedObject.ApplyModifiedProperties();
             }
         }

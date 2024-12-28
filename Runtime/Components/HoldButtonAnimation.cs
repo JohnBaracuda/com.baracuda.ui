@@ -25,12 +25,12 @@ namespace Baracuda.UI.Components
         [SerializeField] [Required] private TMP_Text textField;
 
         [Header("Fill")]
-        [SerializeField] [Required] private Color fillColorFrom;
-        [SerializeField] [Required] private Color fillColorTo;
-        [SerializeField] [Required] private AnimationCurve fillCurve = AnimationCurve.Linear(0, 0, 1, 1);
+        [SerializeField] private Color fillColorFrom;
+        [SerializeField] private Color fillColorTo;
+        [SerializeField] private AnimationCurve fillCurve = AnimationCurve.Linear(0, 0, 1, 1);
 
         [Header("Text")]
-        [SerializeField] [Required] private AnimationCurve colorCurve;
+        [SerializeField] private AnimationCurve colorCurve;
         [SerializeField] private Color fromTextColor;
         [SerializeField] private Color toTextColor;
 

@@ -1,27 +1,81 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Baracuda.Utility.Types;
 using DG.Tweening;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 namespace Baracuda.UI.Components
 {
     public class TabController : MonoBehaviour
     {
+        #region Public API
+
+        [PublicAPI]
+        public IReadOnlyList<TabEntry> TabEntries => _tabs;
+
+        [PublicAPI]
+        public TabEntry CurrentTab => GetCurrentTab();
+
+        [PublicAPI]
+        public void OpenNextTab()
+        {
+            OpenNextTabInternal();
+        }
+
+        [PublicAPI]
+        public void OpenPreviousTab()
+        {
+            OpenPreviousTabInternal();
+        }
+
+        [PublicAPI]
+        public void OpenTab(int index)
+        {
+            OpenTabInternal(index);
+        }
+
+        [PublicAPI]
+        public void AddTabEntry(TabEntry tabEntry)
+        {
+            AddTabEntryInternal(tabEntry);
+        }
+
+        [PublicAPI]
+        public bool Initialize()
+        {
+            return InitializeInternal();
+        }
+
+        #endregion
+
+
         #region Fields
 
+        [SerializeField] private bool initializeInStart = true;
         [SerializeField] private TabEntry[] tabs;
         [SerializeField] private InputActionReference nextTabInput;
         [SerializeField] private InputActionReference previousTabInput;
+
+        private readonly List<TabEntry> _tabs = new();
 
         public event Action<TabEntry> ActiveTabChanged;
 
         [Serializable]
         public struct TabEntry
         {
-            public ButtonAnimation button;
+            [FormerlySerializedAs("button")]
+            public ButtonAnimation tabButton;
             public Tab tab;
+
+            public T GetTab<T>() where T : Tab
+            {
+                return tab as T;
+            }
         }
 
         private DynamicIndex _tabIndex;
@@ -29,59 +83,67 @@ namespace Baracuda.UI.Components
 
         private Tab GetTabByIndex(int index)
         {
-            return tabs[index].tab;
+            return _tabs[index].tab;
         }
 
         private ButtonAnimation GetButtonByIndex(int index)
         {
-            return tabs[index].button;
+            return _tabs[index].tabButton;
         }
 
         private TabEntry GetByIndex(int index)
         {
-            return tabs[index];
+            return _tabs[index];
         }
 
         #endregion
 
 
-        #region API
+        #region Logic
 
-        public TabEntry[] TabEntries => tabs;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private TabEntry GetCurrentTab()
+        {
+            InitializeInternal();
+            return GetByIndex(_tabIndex);
+        }
 
-        public void OpenNextTab()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void OpenNextTabInternal()
         {
             this.DOComplete(true);
             var sequence = DOTween.Sequence(this);
 
             var current = GetByIndex(_tabIndex);
             sequence.Append(current.tab.FadeOut());
-            current.button.Unlock();
+            current.tabButton.Unlock();
             _tabIndex++;
             var next = GetByIndex(_tabIndex);
             sequence.Append(next.tab.FadeIn());
-            next.button.Lock();
-            EventSystem.current.SetSelectedGameObject(next.button.gameObject);
+            next.tabButton.Lock();
+            EventSystem.current.SetSelectedGameObject(next.tabButton.gameObject);
             ActiveTabChanged?.Invoke(next);
         }
 
-        public void OpenPreviousTab()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void OpenPreviousTabInternal()
         {
             this.DOComplete(true);
             var sequence = DOTween.Sequence(this);
 
             var current = GetByIndex(_tabIndex);
             sequence.Append(current.tab.FadeOut());
-            current.button.Unlock();
+            current.tabButton.Unlock();
             _tabIndex--;
             var next = GetByIndex(_tabIndex);
             sequence.Append(next.tab.FadeIn());
-            next.button.Lock();
-            EventSystem.current.SetSelectedGameObject(next.button.gameObject);
+            next.tabButton.Lock();
+            EventSystem.current.SetSelectedGameObject(next.tabButton.gameObject);
             ActiveTabChanged?.Invoke(next);
         }
 
-        public void OpenTab(int index)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void OpenTabInternal(int index)
         {
             if (_tabIndex.Value == index)
             {
@@ -92,23 +154,20 @@ namespace Baracuda.UI.Components
             var sequence = DOTween.Sequence(this);
             var current = GetByIndex(_tabIndex);
             sequence.Append(current.tab.FadeOut());
-            current.button.Unlock();
+            current.tabButton.Unlock();
 
             _tabIndex.Value = index;
 
             var next = GetByIndex(_tabIndex);
             sequence.Append(next.tab.FadeIn());
-            next.button.Lock();
+            next.tabButton.Lock();
             ActiveTabChanged?.Invoke(next);
         }
 
-        public TabEntry CurrentTab
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void AddTabEntryInternal(TabEntry tabEntry)
         {
-            get
-            {
-                Initialize();
-                return GetByIndex(_tabIndex);
-            }
+            _tabs.Add(tabEntry);
         }
 
         #endregion
@@ -116,22 +175,30 @@ namespace Baracuda.UI.Components
 
         #region Setup & Initialization
 
-        private void Start()
+        private void Awake()
         {
-            Initialize();
+            _tabs.AddRange(tabs);
         }
 
-        private void Initialize()
+        private void Start()
+        {
+            if (initializeInStart)
+            {
+                InitializeInternal();
+            }
+        }
+
+        private bool InitializeInternal()
         {
             if (_isInitialized)
             {
-                return;
+                return false;
             }
             _isInitialized = true;
-            for (var index = 0; index < tabs.Length; index++)
+            for (var index = 0; index < _tabs.Count; index++)
             {
-                var tabEntry = tabs[index];
-                var button = tabEntry.button;
+                var tabEntry = _tabs[index];
+                var button = tabEntry.tabButton;
                 var capturedIndex = index;
                 button.Button.onClick.AddListener(() => OpenTab(capturedIndex));
                 button.Selected += () => OpenTab(capturedIndex);
@@ -139,12 +206,13 @@ namespace Baracuda.UI.Components
                 tab.FadeOut().Complete(true);
             }
 
-            _tabIndex = DynamicIndex.Create(tabs);
+            _tabIndex = DynamicIndex.Create(_tabs);
 
             var currentTab = GetTabByIndex(_tabIndex);
             currentTab.FadeIn().Complete(true);
             var currentButton = GetButtonByIndex(_tabIndex);
             currentButton.Lock();
+            return true;
         }
 
         private void OnDestroy()
@@ -161,7 +229,10 @@ namespace Baracuda.UI.Components
         {
             nextTabInput.action.performed += OnNextTabInput;
             previousTabInput.action.performed += OnPreviousTabInput;
-            CurrentTab.button.Lock();
+            if (_isInitialized)
+            {
+                CurrentTab.tabButton.Lock();
+            }
         }
 
         private void OnDisable()

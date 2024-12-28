@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Baracuda.Utility.Collections;
 using Baracuda.Utility.Input;
 using Baracuda.Utility.Services;
+using Baracuda.Utility.Types;
 using Baracuda.Utility.Utilities;
 using NaughtyAttributes;
 using TMPro;
@@ -10,7 +12,6 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Image = UnityEngine.UI.Image;
-using Index = Baracuda.Utility.Types.Index;
 
 namespace Baracuda.UI.Components
 {
@@ -29,7 +30,6 @@ namespace Baracuda.UI.Components
 
         [Header("Components")]
         [SerializeField] [Required] private Image nextSelectGraphic;
-
         [SerializeField] [Required] private Image previousSelectGraphic;
         [SerializeField] [Required] private TMP_Text selectionTextField;
         [SerializeField] [Required] private Transform indexWidgetContainer;
@@ -39,7 +39,7 @@ namespace Baracuda.UI.Components
 
         #region Fields
 
-        private Index _index;
+        private DynamicIndex _index;
 
         #endregion
 
@@ -49,9 +49,9 @@ namespace Baracuda.UI.Components
         public bool AllowWrapping { get; set; }
         public bool IsInitialized { get; private set; }
         public int Index => _index;
-        public SelectionEntry[] Entries { get; private set; }
+        public IList<SelectionEntry> Entries { get; private set; }
 
-        public SelectionEntry Entry => Entries[_index];
+        public SelectionEntry Entry => Entries[Index];
 
         public event Action PointerEntered;
         public event Action PointerExited;
@@ -81,7 +81,7 @@ namespace Baracuda.UI.Components
 
         #region Setup
 
-        public void Initialize(SelectionEntry[] entries, SelectionEntry startEntry)
+        public void Initialize(IList<SelectionEntry> entries, SelectionEntry startEntry)
         {
             if (IsInitialized)
             {
@@ -92,7 +92,7 @@ namespace Baracuda.UI.Components
             AllowWrapping = allowWrapping;
             Entries = entries;
             startEntry ??= Entries.First();
-            _index = Utility.Types.Index.Create(startEntry.Index, Entries);
+            _index = DynamicIndex.Create(startEntry.Index, Entries, allowWrapping);
             nextSelectGraphic.GetOrAddComponent<PointerEvents>().PointerDown += OnNextPressed;
             previousSelectGraphic.GetOrAddComponent<PointerEvents>().PointerDown += OnPreviousPressed;
 
@@ -103,11 +103,11 @@ namespace Baracuda.UI.Components
                 element.SetActive(false);
             }
 
-            IndexWidgetsEnabled = entries.Length <= indexDisplayLimit;
+            IndexWidgetsEnabled = entries.Count <= indexDisplayLimit;
 
             if (IndexWidgetsEnabled)
             {
-                IndexWidgets = new Image[entries.Length];
+                IndexWidgets = new Image[entries.Count];
 
                 for (var index = 0; index < IndexWidgets.Length; index++)
                 {
@@ -147,9 +147,10 @@ namespace Baracuda.UI.Components
                 return;
             }
 
-            if (_index.IsMax is false || AllowWrapping)
+            var current = _index.Value;
+            _index++;
+            if (_index.Value != current)
             {
-                _index++;
                 RefreshRepresentation();
             }
         }
@@ -160,10 +161,10 @@ namespace Baracuda.UI.Components
             {
                 return;
             }
-
-            if (_index.IsMin is false || AllowWrapping)
+            var current = _index.Value;
+            _index--;
+            if (_index.Value != current)
             {
-                _index--;
                 RefreshRepresentation();
             }
         }
@@ -189,6 +190,18 @@ namespace Baracuda.UI.Components
             RefreshRepresentation();
         }
 
+        public void SelectEnumElement(int enumValue)
+        {
+            if (!IsInitialized)
+            {
+                return;
+            }
+
+            var index = Entries.First(entry => entry.EnumValue == enumValue).Index;
+            _index.Value = index;
+            RefreshRepresentation();
+        }
+
         public void RefreshRepresentation()
         {
             if (Entries == null)
@@ -197,7 +210,51 @@ namespace Baracuda.UI.Components
             }
 
             selectionTextField.text = Entries[_index].Name;
+
+            UpdateButtonGraphics();
+
             ValueChanged?.Invoke(Entries[_index]);
+        }
+
+        public void RefreshRepresentationWithoutNotify()
+        {
+            if (Entries == null)
+            {
+                return;
+            }
+
+            selectionTextField.text = Entries[_index].Name;
+            UpdateButtonGraphics();
+        }
+
+        public void UpdateButtonGraphics(Color? activeColor = null)
+        {
+            if (AllowWrapping is false)
+            {
+                var color = activeColor ?? new Color(0.71f, 0.71f, 0.71f);
+                var indexValue = _index.Value;
+                if (indexValue < _index.Max())
+                {
+                    nextSelectGraphic.color = color;
+                    nextSelectGraphic.raycastTarget = true;
+                }
+                else
+                {
+                    nextSelectGraphic.color = new Color(0.49f, 0.49f, 0.49f, 0.5f);
+                    nextSelectGraphic.raycastTarget = false;
+                }
+
+                if (indexValue > _index.Min())
+                {
+                    previousSelectGraphic.color = color;
+                    previousSelectGraphic.raycastTarget = true;
+                }
+                else
+                {
+                    previousSelectGraphic.color = new Color(0.49f, 0.49f, 0.49f, 0.5f);
+                    previousSelectGraphic.raycastTarget = false;
+                }
+            }
         }
 
         #endregion
@@ -237,6 +294,11 @@ namespace Baracuda.UI.Components
         {
             base.OnMove(eventData);
 
+            if (interactable is false)
+            {
+                return;
+            }
+
             if (eventData.moveDir is MoveDirection.Right)
             {
                 SelectNext();
@@ -273,16 +335,40 @@ namespace Baracuda.UI.Components
 
         private void OnNextPressed(PointerEvents pointerDownEvent)
         {
+            if (!enabled)
+            {
+                return;
+            }
+            if (interactable is false)
+            {
+                return;
+            }
             SelectNext();
         }
 
         private void OnPreviousPressed(PointerEvents pointerDownEvent)
         {
+            if (!enabled)
+            {
+                return;
+            }
+            if (interactable is false)
+            {
+                return;
+            }
             SelectPrevious();
         }
 
         private void OnElementClicked(PointerEvents pointerDownEvent)
         {
+            if (!enabled)
+            {
+                return;
+            }
+            if (interactable is false)
+            {
+                return;
+            }
             var element = pointerDownEvent.GetComponent<Image>();
             var index = IndexWidgets.IndexOf(element);
             SelectElement(index);

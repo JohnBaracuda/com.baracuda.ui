@@ -1,5 +1,4 @@
-﻿using Baracuda.Serialization;
-using Baracuda.Utility.Utilities;
+﻿using Baracuda.Utility.Utilities;
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -9,7 +8,6 @@ namespace Baracuda.UI.Components
     [RequireComponent(typeof(UIDocument))]
     public class DocumentScaleController : MonoBehaviour
     {
-        [SerializeField] [Required] private SaveDataFloat canvasScaleFactor;
         [SerializeField] [Required] private UIDocument uiDocument;
 
         private const float MinScaleFactor = .1f;
@@ -22,13 +20,12 @@ namespace Baracuda.UI.Components
 
         private void OnEnable()
         {
-            canvasScaleFactor.Changed += UpdateCanvasScaleFactor;
-            UpdateCanvasScaleFactor(canvasScaleFactor.Value);
+            AutoCanvasScaler.ScaleFactor.AddObserver(UpdateCanvasScaleFactor);
         }
 
         private void OnDisable()
         {
-            canvasScaleFactor.Changed -= UpdateCanvasScaleFactor;
+            AutoCanvasScaler.ScaleFactor.RemoveObserver(UpdateCanvasScaleFactor);
         }
 
         private void UpdateCanvasScaleFactor(float scaleFactor)

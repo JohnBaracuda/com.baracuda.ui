@@ -12,7 +12,6 @@ using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.Assertions;
-using Object = UnityEngine.Object;
 
 // ReSharper disable SuspiciousTypeConversion.Global
 
@@ -27,8 +26,8 @@ namespace Baracuda.UI
         private UIGroup _group;
         private UIGroupSettings _settings;
         private bool _hasGroupBackground;
-        private readonly HashSet<Object> _visibilityBlocker = new();
-        private readonly HashSet<Object> _backgroundBlocker = new();
+        private readonly HashSet<object> _visibilityBlocker = new();
+        private readonly HashSet<object> _backgroundBlocker = new();
         private UIContainer _container;
         private Sequence _transitionSequence;
         private readonly PriorityQueue<(UICommand command, UniTaskCompletionSource<IWindow> completionSource)> _queue = new();
@@ -84,7 +83,23 @@ namespace Baracuda.UI
 
             if (_hasGroupBackground)
             {
-                Background.Hide();
+                Background.Hide(this);
+            }
+        }
+
+        internal void RemoveWindow(IWindow window)
+        {
+            if (IsOnTopOfStack(window))
+            {
+                _uiStack.Pop();
+                if (_uiStack.TryPeek(out var nextWindow))
+                {
+                    ExecuteWindowFocusGainCallbacks(nextWindow);
+                }
+            }
+            else
+            {
+                _uiStack.Remove(window);
             }
         }
 
@@ -105,17 +120,28 @@ namespace Baracuda.UI
                 {
                     while (_uiStack.TryPeek(out var window))
                     {
+                        if (window.IsNull())
+                        {
+                            _uiStack.Pop();
+                            continue;
+                        }
                         ExecuteWindowClosingCallbacks(window);
                         ExecuteWindowFocusLossCallbacks(window);
                         _uiStack.Remove(window);
                         await window.HideAsync(context).AsyncWaitForCompletion();
+
+                        if (window.IsNull())
+                        {
+                            continue;
+                        }
+
                         ExecuteWindowClosedCallbacks(window);
                         SetActive(window, false);
                     }
                     ResetEscapeForTransition();
                     if (_hasGroupBackground)
                     {
-                        Background.Hide();
+                        Background.Hide(this);
                     }
                     return;
                 }
@@ -142,7 +168,7 @@ namespace Baracuda.UI
                     ResetEscapeForTransition();
                     if (_hasGroupBackground)
                     {
-                        Background.Hide();
+                        Background.Hide(this);
                     }
                     return;
                 }
@@ -494,7 +520,7 @@ namespace Baracuda.UI
         {
             if (_hasGroupBackground && _uiStack.Count == 0 && _backgroundBlocker.Count <= 0)
             {
-                Background.Show();
+                Background.Show(this);
             }
 
             var previousFocusWindow = _uiStack.Peek();
@@ -589,7 +615,7 @@ namespace Baracuda.UI
 
             if (_hasGroupBackground && _uiStack.Count == 0)
             {
-                Background.Hide();
+                Background.Hide(this);
             }
 
             UpdateWindowSortingOrder();
@@ -776,18 +802,18 @@ namespace Baracuda.UI
         #region Background Blocking
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void BlockBackgroundInternal(Object source)
+        private void BlockBackgroundInternal(object source)
         {
             if (!_hasGroupBackground)
             {
                 return;
             }
             _backgroundBlocker.Add(source);
-            Background.Hide();
+            Background.Hide(this);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void UnblockBackgroundInternal(Object source)
+        private void UnblockBackgroundInternal(object source)
         {
             if (!_hasGroupBackground)
             {
@@ -796,7 +822,7 @@ namespace Baracuda.UI
             _backgroundBlocker.Remove(source);
             if (_backgroundBlocker.Count == 0 && _uiStack.Count > 0 && !Gameloop.IsQuitting)
             {
-                Background.Show();
+                Background.Show(this);
             }
         }
 
@@ -805,7 +831,7 @@ namespace Baracuda.UI
 
         #region Visibility
 
-        private void BlockInternal(Object source)
+        private void BlockInternal(object source)
         {
             if (_visibilityBlocker.Add(source) && _visibilityBlocker.Count == 1)
             {
@@ -819,7 +845,7 @@ namespace Baracuda.UI
             }
         }
 
-        private void UnblockInternal(Object source)
+        private void UnblockInternal(object source)
         {
             if (_visibilityBlocker.Remove(source) && _visibilityBlocker.Count == 0)
             {
